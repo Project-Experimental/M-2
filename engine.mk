@@ -5,6 +5,38 @@ include make/macros.mk
 
 BUILDROOT ?= .
 
+# !!!!!!!!!!!!!!!! For Clang !!!!!!!!!!!!!!!!!!
+TARGET=--target=x86_64-none-elf
+
+ifeq ($(LLVM),1)
+  CC      := clang
+  CXX     := clang++
+  AS      := clang -x assembler-with-cpp
+  LD      := ld.lld
+  AR      := llvm-ar
+  NM      := llvm-nm
+  OBJCOPY := llvm-objcopy
+  OBJDUMP := llvm-objdump
+  STRIP   := llvm-strip
+  RANLIB  := llvm-ranlib
+  SIZE    := llvm-size
+  CPPFILT := llvm-cxxfilt
+else ifneq (, $(findstring /, $(LLVM)))
+  CC      := $(LLVM)clang $(TARGET)
+  CXX     := $(LLVM)clang++ $(TARGET)
+  AS      := $(LLVM)clang $(TARGET) -x assembler-with-cpp
+  LD      := $(LLVM)ld.lld
+  AR      := $(LLVM)llvm-ar
+  NM      := $(LLVM)llvm-nm
+  OBJCOPY := $(LLVM)llvm-objcopy
+  OBJDUMP := $(LLVM)llvm-objdump
+  STRIP   := $(LLVM)llvm-strip
+  RANLIB  := $(LLVM)llvm-ranlib
+  SIZE    := $(LLVM)llvm-size
+  CPPFILT := $(LLVM)llvm-cxxfilt
+endif
+# !!!!!!!!!!!!!!!! For Clang !!!!!!!!!!!!!!!!!!
+
 # 'make spotless' is a special rule that skips most of the rest of the build system and
 # simply deletes everything in build-*
 ifeq ($(MAKECMDGOALS),spotless)
