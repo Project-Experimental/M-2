@@ -18,7 +18,7 @@ __BEGIN_CDECLS
 
 #define PORT_NAME_LEN 12
 
-typedef void *port_t;
+typedef uint8_t *port_t;
 
 // A Port packet is wide enough to carry two full words of data
 #define PORT_PACKET_LEN (sizeof(void *) * 2)

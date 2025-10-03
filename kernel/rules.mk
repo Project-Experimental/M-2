@@ -4,18 +4,19 @@ MODULE := $(LOCAL_DIR)
 
 MODULE_DEPS := \
 	lib/libc \
-	lib/heap
+	lib/heap \
+	lib/libcpp
 
 MODULE_SRCS := \
-	$(LOCAL_DIR)/debug.c \
-	$(LOCAL_DIR)/event.c \
-	$(LOCAL_DIR)/init.c \
-	$(LOCAL_DIR)/mutex.c \
-	$(LOCAL_DIR)/thread.c \
-	$(LOCAL_DIR)/timer.c \
-	$(LOCAL_DIR)/semaphore.c \
-	$(LOCAL_DIR)/mp.c \
-	$(LOCAL_DIR)/port.c
+	$(LOCAL_DIR)/debug.cc \
+	$(LOCAL_DIR)/event.cc \
+	$(LOCAL_DIR)/init.cc \
+	$(LOCAL_DIR)/mutex.cc \
+	$(LOCAL_DIR)/thread.cc \
+	$(LOCAL_DIR)/timer.cc \
+	$(LOCAL_DIR)/semaphore.cc \
+	$(LOCAL_DIR)/mp.cc \
+	$(LOCAL_DIR)/port.cc
 
 ifeq ($(WITH_KERNEL_VM),1)
 MODULE_DEPS += kernel/vm

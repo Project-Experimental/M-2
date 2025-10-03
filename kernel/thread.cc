@@ -35,6 +35,8 @@
 #include <kernel/vm.h>
 #endif
 
+#include <new>
+
 #if THREAD_STATS
 struct thread_stats thread_stats[SMP_MAX_CPUS];
 #endif
@@ -147,7 +149,7 @@ thread_t *thread_create_etc(thread_t *t, const char *name, thread_start_routine 
     unsigned int flags = 0;
 
     if (!t) {
-        t = malloc(sizeof(thread_t));
+        t = new thread_t;
         if (!t)
             return NULL;
         flags |= THREAD_FLAG_FREE_STRUCT;
@@ -176,10 +178,10 @@ thread_t *thread_create_etc(thread_t *t, const char *name, thread_start_routine 
         stack_size += THREAD_STACK_PADDING_SIZE;
         flags |= THREAD_FLAG_DEBUG_STACK_BOUNDS_CHECK;
 #endif
-        t->stack = malloc(stack_size);
+        t->stack = new uint8_t[stack_size];
         if (!t->stack) {
             if (flags & THREAD_FLAG_FREE_STRUCT)
-                free(t);
+                delete t;
             return NULL;
         }
         flags |= THREAD_FLAG_FREE_STACK;
@@ -187,7 +189,7 @@ thread_t *thread_create_etc(thread_t *t, const char *name, thread_start_routine 
         memset(t->stack, STACK_DEBUG_BYTE, THREAD_STACK_PADDING_SIZE);
 #endif
     } else {
-        t->stack = stack;
+        t->stack = static_cast<uint8_t*>(stack);
     }
 #if THREAD_STACK_HIGHWATER
     if (flags & THREAD_FLAG_DEBUG_STACK_BOUNDS_CHECK) {
@@ -345,10 +347,10 @@ status_t thread_join(thread_t *t, int *retcode, lk_time_t timeout) {
 
     /* free its stack and the thread structure itself */
     if (t->flags & THREAD_FLAG_FREE_STACK && t->stack)
-        free(t->stack);
+        delete t->stack;
 
     if (t->flags & THREAD_FLAG_FREE_STRUCT)
-        free(t);
+        delete t;
 
     return NO_ERROR;
 }
@@ -950,7 +952,7 @@ static size_t thread_stack_used(const thread_t *t) {
     size_t stack_size;
     size_t i;
 
-    stack_base = t->stack;
+    stack_base = static_cast<decltype(stack_base)>(t->stack);
     stack_size = t->stack_size;
 
     for (i = 0; i < stack_size; i++) {

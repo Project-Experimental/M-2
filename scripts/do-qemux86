@@ -138,6 +138,6 @@ else
     ARGS+=" -net none"
 fi
 
-$DIR/make-parallel $MAKE_VARS $PROJECT &&
+#$DIR/make-parallel $MAKE_VARS $PROJECT &&
 echo $SUDO $QEMU $ARGS $@ &&
 exec $SUDO $QEMU $ARGS $@

@@ -11,9 +11,9 @@ MODULE_DEPS := \
 	target
 
 MODULE_SRCS := \
-	$(LOCAL_DIR)/debug.c \
-	$(LOCAL_DIR)/init.c \
-	$(LOCAL_DIR)/main.c \
+	$(LOCAL_DIR)/debug.cc \
+	$(LOCAL_DIR)/init.cc \
+	$(LOCAL_DIR)/main.cc \
 
 MODULE_OPTIONS := extra_warnings
 

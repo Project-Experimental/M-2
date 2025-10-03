@@ -104,7 +104,7 @@ typedef struct thread {
     struct arch_thread arch;
 
     // kernel stack information
-    void *stack;
+    uint8_t *stack;
     size_t stack_size;
 
     // thread entry point

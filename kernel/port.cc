@@ -81,7 +81,7 @@ static struct list_node write_port_list;
 static port_buf_t *make_buf(bool big) {
     uint pk_count = big ? PORT_BUFF_SIZE_BIG : PORT_BUFF_SIZE;
     uint size = sizeof(port_buf_t) + ((pk_count - 1) * sizeof(port_packet_t));
-    port_buf_t *buf = (port_buf_t *) malloc(size);
+    port_buf_t *buf = reinterpret_cast<port_buf_t *>(new uint8_t[size]);
     if (!buf)
         return NULL;
     buf->log2 = log2_uint(pk_count);
@@ -151,7 +151,7 @@ status_t port_create(const char *name, port_mode_t mode, port_t *port) {
                 wp = NULL;
             THREAD_UNLOCK(state1);
             if (wp) {
-                *port = (void *) wp;
+                *port = reinterpret_cast<port_t>(wp);
                 return ERR_ALREADY_EXISTS;
             } else {
                 return ERR_BUSY;
@@ -162,7 +162,7 @@ status_t port_create(const char *name, port_mode_t mode, port_t *port) {
     THREAD_UNLOCK(state1);
 
     // not found, create the write port and the circular buffer.
-    wp = calloc(1, sizeof(write_port_t));
+    wp = new write_port_t;
     if (!wp) {
         THREAD_LOCK(state2);
         list_delete(&stack_wp.node);
@@ -177,7 +177,7 @@ status_t port_create(const char *name, port_mode_t mode, port_t *port) {
 
     wp->buf = make_buf(mode & PORT_MODE_BIG_BUFFER);
     if (!wp->buf) {
-        free(wp);
+        delete wp;
         THREAD_LOCK(state2);
         list_delete(&stack_wp.node);
         THREAD_UNLOCK(state2);
@@ -192,7 +192,7 @@ status_t port_create(const char *name, port_mode_t mode, port_t *port) {
     list_delete(&stack_wp.node);
     THREAD_UNLOCK(state2);
 
-    *port = (void *)wp;
+    *port = reinterpret_cast<port_t>(wp);
     return NO_ERROR;
 }
 
@@ -201,7 +201,7 @@ status_t port_open(const char *name, void *ctx, port_t *port) {
         return ERR_INVALID_ARGS;
 
     // assume success; create the read port and buffer now.
-    read_port_t *rp = calloc(1, sizeof(read_port_t));
+    read_port_t *rp = new read_port_t;
     if (!rp)
         return ERR_NO_MEMORY;
 
@@ -214,7 +214,7 @@ status_t port_open(const char *name, void *ctx, port_t *port) {
     // that here.
     port_buf_t *buf = make_buf(false);  // Small is enough.
     if (!buf) {
-        free(rp);
+        delete rp;
         return ERR_NO_MEMORY;
     }
 
@@ -256,12 +256,12 @@ status_t port_open(const char *name, void *ctx, port_t *port) {
     THREAD_UNLOCK(state);
 
     if (buf)
-        free(buf);
+        delete buf;
 
     if (rc == NO_ERROR) {
-        *port = (void *)rp;
+        *port = reinterpret_cast<uint8_t*>(rp);
     } else {
-        free(rp);
+        delete rp;
     }
     return rc;
 }
@@ -278,7 +278,7 @@ status_t port_group(port_t *ports, size_t count, port_t *group) {
         return ERR_INVALID_ARGS;
 
     // assume success; create port group now.
-    port_group_t *pg = calloc(1, sizeof(port_group_t));
+    port_group_t *pg = new port_group_t;
     if (!pg)
         return ERR_NO_MEMORY;
 
@@ -307,9 +307,9 @@ status_t port_group(port_t *ports, size_t count, port_t *group) {
     THREAD_UNLOCK(state);
 
     if (rc == NO_ERROR) {
-        *group = (port_t *)pg;
+        *group = reinterpret_cast<port_t>(pg);
     } else {
-        free(pg);
+        delete pg;
     }
     return rc;
 }
@@ -523,8 +523,8 @@ status_t port_destroy(port_t port) {
     wp->magic = 0;
     THREAD_UNLOCK(state);
 
-    free(buf);
-    free(wp);
+    delete buf;
+    delete wp;
     return NO_ERROR;
 }
 
@@ -583,8 +583,8 @@ status_t port_close(port_t port) {
 
     THREAD_UNLOCK(state);
 
-    free(buf);
-    free(port);
+    delete buf;
+    delete port;
     return NO_ERROR;
 }
 
