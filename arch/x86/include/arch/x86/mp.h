@@ -32,6 +32,9 @@ typedef struct x86_percpu {
 
 // called extremely early on the boot cpu and each secondary cpu to set
 // up the percpu struct and segment descriptors pointing to it
+
+__BEGIN_CDECLS
+
 void x86_configure_percpu_early(uint cpu_num, uint apic_id);
 
 // C entry point for secondary cpus
@@ -49,6 +52,8 @@ static inline x86_percpu_t *x86_get_percpu(void) {
 
 // get the percpu struct for a specific cpu
 x86_percpu_t *x86_get_percpu_for_cpu(uint cpu_num);
+
+__END_CDECLS
 
 #if 0
 #define X86_PERCPU_GET(field) (_Generic(((x86_get_percpu())->field), \

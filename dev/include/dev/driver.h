@@ -69,7 +69,7 @@ struct driver {
 #define __ex_concat(a, b) a ## b
 
 #define DRIVER_EXPORT(type_, ops_) \
-    const struct driver concat(__driver_, type_) \
+    extern const struct driver concat(__driver_, type_) \
         __ALIGNED(sizeof(void *)) __SECTION("drivers") = { \
         .type = #type_, \
         .ops = ops_, \
@@ -84,7 +84,7 @@ struct driver {
         .flags = flags_, \
         .config = config_, \
         .state = NULL, \
-        .device_state = DEVICE_UNINITIALIZED, \
+        .device_state = device::DEVICE_UNINITIALIZED, \
     }
 
 /*

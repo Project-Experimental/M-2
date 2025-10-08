@@ -24,8 +24,8 @@
 
 #define LOCAL_TRACE 1
 
-extern void mp_boot_start(void);
-extern void mp_boot_end(void);
+extern "C" void mp_boot_start(void);
+extern "C" void mp_boot_end(void);
 
 struct bootstrap_args {
     // referenced in mp-boot.S, do not move without updating assembly
@@ -38,7 +38,7 @@ struct bootstrap_args {
 };
 
 // called from assembly code in mp-boot.S
-__NO_RETURN void secondary_entry(struct bootstrap_args *args) {
+extern "C" __NO_RETURN void secondary_entry(struct bootstrap_args *args) {
     volatile uint32_t *boot_completed = args->boot_completed_ptr;
     uint cpu_num = args->cpu_num;
 
@@ -106,8 +106,8 @@ struct detected_cpus {
 };
 
 static void local_apic_callback(const void *_entry, size_t entry_len, void *cookie) {
-    const struct acpi_madt_local_apic_entry *entry = _entry;
-    struct detected_cpus *cpus = cookie;
+    const struct acpi_madt_local_apic_entry *entry = static_cast<const struct acpi_madt_local_apic_entry *>(_entry);
+    struct detected_cpus *cpus = static_cast<struct detected_cpus*>(cookie);
 
     if ((entry->flags & ACPI_MADT_FLAG_ENABLED) == 0) {
         return;
@@ -157,7 +157,7 @@ void platform_start_secondary_cpus(void) {
     vmm_aspace_t *old_aspace = vmm_set_active_aspace(aspace);
 
     // set up bootstrap code page at TRAMPOLINE_ADDRESS for secondary cpu
-    memcpy(ptr, mp_boot_start, mp_boot_end - mp_boot_start);
+    memcpy(ptr, reinterpret_cast<void*>(mp_boot_start), reinterpret_cast<uint64_t>(mp_boot_end) - reinterpret_cast<uint64_t>(mp_boot_start));
 
     // next page has args in it
     struct bootstrap_args *args = (struct bootstrap_args *)((uintptr_t)ptr + 0x1000);

@@ -16,19 +16,19 @@ MODULE_DEPS += lib/acpi_lite
 endif
 
 MODULE_SRCS += \
-    $(LOCAL_DIR)/cmos.c \
-    $(LOCAL_DIR)/console.c \
-    $(LOCAL_DIR)/debug.c \
-    $(LOCAL_DIR)/ide.c \
-    $(LOCAL_DIR)/interrupts.c \
-    $(LOCAL_DIR)/keyboard.c \
-    $(LOCAL_DIR)/mp.c \
+    $(LOCAL_DIR)/cmos.cc \
+    $(LOCAL_DIR)/console.cc \
+    $(LOCAL_DIR)/debug.cc \
+    $(LOCAL_DIR)/ide.cc \
+    $(LOCAL_DIR)/interrupts.cc \
+    $(LOCAL_DIR)/keyboard.cc \
+    $(LOCAL_DIR)/mp.cc \
     $(LOCAL_DIR)/mp-boot.S \
-    $(LOCAL_DIR)/pic.c \
-    $(LOCAL_DIR)/pit.c \
-    $(LOCAL_DIR)/platform.c \
-    $(LOCAL_DIR)/timer.c \
-    $(LOCAL_DIR)/uart.c \
+    $(LOCAL_DIR)/pic.cc \
+    $(LOCAL_DIR)/pit.cc \
+    $(LOCAL_DIR)/platform.cc \
+    $(LOCAL_DIR)/timer.cc \
+    $(LOCAL_DIR)/uart.cc \
 
 LK_HEAP_IMPLEMENTATION ?= dlmalloc
 

@@ -47,6 +47,7 @@ static struct uart_ops the_ops = {
 DRIVER_EXPORT(uart, &the_ops.std);
 
 static status_t uart_init(struct device *dev) {
+    int divisor;
     status_t res = NO_ERROR;
 
     if (!dev)
@@ -55,9 +56,9 @@ static status_t uart_init(struct device *dev) {
     if (!dev->config)
         return ERR_NOT_CONFIGURED;
 
-    const struct platform_uart_config *config = dev->config;
+    const struct platform_uart_config *config = static_cast<const struct platform_uart_config*>(dev->config);
 
-    struct uart_driver_state *state = malloc(sizeof(struct uart_driver_state));
+    struct uart_driver_state *state = static_cast<struct uart_driver_state*>(malloc(sizeof(struct uart_driver_state)));
     if (!state) {
         res = ERR_NO_MEMORY;
         goto done;
@@ -70,7 +71,7 @@ static status_t uart_init(struct device *dev) {
     cbuf_initialize(&state->tx_buf, config->tx_buf_len);
 
     /* configure the uart */
-    int divisor = 115200 / config->baud_rate;
+    divisor = 115200 / config->baud_rate;
 
     outp(config->io_port + 3, 0x80); // set up to load divisor latch
     outp(config->io_port + 0, divisor & 0xff); // lsb
@@ -93,14 +94,14 @@ done:
 
 static enum handler_return uart_irq_handler(void *arg) {
     bool resched = false;
-    struct device *dev = arg;
+    struct device *dev = static_cast<struct device*>(arg);
 
     DEBUG_ASSERT(dev);
     DEBUG_ASSERT(dev->config);
     DEBUG_ASSERT(dev->state);
 
-    const struct platform_uart_config *config = dev->config;
-    struct uart_driver_state *state = dev->state;
+    const struct platform_uart_config *config = static_cast<const struct platform_uart_config*>(dev->config);
+    struct uart_driver_state *state = static_cast<struct uart_driver_state*>(dev->state);
 
     while (inp(config->io_port + 5) & (1<<0)) {
         char c = inp(config->io_port + 0);
@@ -112,14 +113,14 @@ static enum handler_return uart_irq_handler(void *arg) {
 }
 
 static int uart_write_thread(void *arg) {
-    struct device *dev = arg;
+    struct device *dev = static_cast<struct device*>(arg);
 
     DEBUG_ASSERT(dev);
     DEBUG_ASSERT(dev->config);
     DEBUG_ASSERT(dev->state);
 
-    const struct platform_uart_config *config = dev->config;
-    struct uart_driver_state *state = dev->state;
+    const struct platform_uart_config *config = static_cast<const struct platform_uart_config*>(dev->config);
+    struct uart_driver_state *state = static_cast<struct uart_driver_state*>(dev->state);
 
     return 0;
 
@@ -140,7 +141,7 @@ static ssize_t uart_read(struct device *dev, void *buf, size_t len) {
         return ERR_INVALID_ARGS;
 
     DEBUG_ASSERT(dev->state);
-    struct uart_driver_state *state = dev->state;
+    struct uart_driver_state *state = static_cast<struct uart_driver_state*>(dev->state);
 
     return cbuf_read(&state->rx_buf, buf, len, true);
 }
@@ -150,7 +151,7 @@ static ssize_t uart_write(struct device *dev, const void *buf, size_t len) {
         return ERR_INVALID_ARGS;
 
     DEBUG_ASSERT(dev->state);
-    struct uart_driver_state *state = dev->state;
+    struct uart_driver_state *state = static_cast<struct uart_driver_state*>(dev->state);
 
     return cbuf_write(&state->tx_buf, buf, len, true);
 }

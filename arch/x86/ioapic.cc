@@ -60,7 +60,7 @@ status_t ioapic_init(int index, paddr_t phys_addr, uint apic_id, uint gsi_base) 
     LTRACEF("%d: phys_addr %#lx apic_id %u gsi_base %u\n", index, phys_addr, apic_id, gsi_base);
 
     {
-        struct ioapic *new_ioapics = realloc(ioapics, sizeof(struct ioapic) * (num_ioapics + 1));
+        struct ioapic *new_ioapics = static_cast<struct ioapic*>(realloc(ioapics, sizeof(struct ioapic) * (num_ioapics + 1)));
         if (!new_ioapics) {
             return ERR_NO_MEMORY;
         }
@@ -92,8 +92,10 @@ status_t ioapic_init(int index, paddr_t phys_addr, uint apic_id, uint gsi_base) 
     if (LOCAL_TRACE) {
         for (uint i = 0; i < ioapic->num_redir_entries; i++) {
             // read and dump the current entry
-            uint32_t lo = ioapic_read(ioapic, IOAPIC_REDIR_TABLE_BASE + i * 2);
-            uint32_t hi = ioapic_read(ioapic, IOAPIC_REDIR_TABLE_BASE + i * 2 + 1);
+            uint32_t lo = ioapic_read(ioapic, 
+                static_cast<ioapic_regs>(IOAPIC_REDIR_TABLE_BASE + i * 2));
+            uint32_t hi = ioapic_read(ioapic, 
+                static_cast<ioapic_regs>(IOAPIC_REDIR_TABLE_BASE + i * 2 + 1));
             dprintf(INFO, "X86:     redir %2u hi %#x lo %#x\n", i, hi, lo);
         }
     }

@@ -136,7 +136,7 @@ void window(int x1, int y1, int x2, int y2) {
 }
 
 void _clear(char c,char attr,int x1,int y1,int x2,int y2) {
-    register int i,j;
+    int i,j;
     unsigned short w = attr;
 
     w <<= 8;
@@ -158,7 +158,7 @@ void clear() {
 }
 
 void _scroll(char attr, int x1, int y1, int x2, int y2) {
-    register int x,y;
+    int x,y;
     unsigned short xattr = attr << 8,w;
     unsigned char *v = (unsigned char *)(uintptr_t)(FB + active_page*(2*VPAGE_SIZE));
 

@@ -222,7 +222,7 @@ status_t platform_compute_msi_values(unsigned int vector, unsigned int cpu, bool
 // Try to detect the ioapic(s) from ACPI and initialize them
 #if WITH_LIB_ACPI_LITE
 static void io_apic_callback(const void *_entry, size_t entry_len, void *cookie) {
-    const struct acpi_madt_io_apic_entry *entry = _entry;
+    const struct acpi_madt_io_apic_entry *entry = static_cast<const struct acpi_madt_io_apic_entry *>(_entry);
 
     static int index = 0;
     ioapic_init(index++, entry->io_apic_address, entry->io_apic_id, entry->global_system_interrupt_base);

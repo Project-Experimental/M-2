@@ -117,7 +117,7 @@ static inline uint64_t get_pml4_entry_from_pml4_table(const vaddr_t vaddr, const
 }
 
 static inline uint64_t get_pdp_entry_from_pdp_table(const vaddr_t vaddr, const uint64_t pml4e) {
-    const uint64_t *pdpe_table = paddr_to_kvaddr(get_pfn_from_pte(pml4e));
+    const uint64_t *pdpe_table = static_cast<const uint64_t*>(paddr_to_kvaddr(get_pfn_from_pte(pml4e)));
 
     uint32_t index = (((uint64_t)vaddr >> PDP_SHIFT) & ((1ul << ADDR_OFFSET) - 1));
 
@@ -126,7 +126,7 @@ static inline uint64_t get_pdp_entry_from_pdp_table(const vaddr_t vaddr, const u
 }
 
 static inline uint64_t get_pd_entry_from_pd_table(const vaddr_t vaddr, const uint64_t pdpe) {
-    const uint64_t *pde_table = paddr_to_kvaddr(get_pfn_from_pte(pdpe));
+    const uint64_t *pde_table = static_cast<const uint64_t*>(paddr_to_kvaddr(get_pfn_from_pte(pdpe)));
 
     uint32_t index = (((uint64_t)vaddr >> PD_SHIFT) & ((1ul << ADDR_OFFSET) - 1));
 
@@ -135,7 +135,7 @@ static inline uint64_t get_pd_entry_from_pd_table(const vaddr_t vaddr, const uin
 }
 
 static inline uint64_t get_pt_entry_from_pt_table(const vaddr_t vaddr, const uint64_t pde) {
-    const uint64_t *pte_table = paddr_to_kvaddr(get_pfn_from_pte(pde));
+    const uint64_t *pte_table = static_cast<const uint64_t*>(paddr_to_kvaddr(get_pfn_from_pte(pde)));
 
     uint32_t index = (((uint64_t)vaddr >> PT_SHIFT) & ((1ul << ADDR_OFFSET) - 1));
 
@@ -260,7 +260,7 @@ last:
 }
 
 static void update_pt_entry(vaddr_t vaddr, uint64_t pde, paddr_t paddr, arch_flags_t flags) {
-    uint64_t *pt_table = paddr_to_kvaddr(get_pfn_from_pte(pde));
+    uint64_t *pt_table = static_cast<uint64_t*>(paddr_to_kvaddr(get_pfn_from_pte(pde)));
     uint32_t pt_index = (((uint64_t)vaddr >> PT_SHIFT) & ((1ul << ADDR_OFFSET) - 1));
     pt_table[pt_index] = paddr;
     pt_table[pt_index] |= flags | X86_MMU_PG_P;
@@ -270,7 +270,7 @@ static void update_pt_entry(vaddr_t vaddr, uint64_t pde, paddr_t paddr, arch_fla
 }
 
 static void update_pd_entry(vaddr_t vaddr, uint64_t pdpe, map_addr_t paddr, arch_flags_t flags) {
-    uint64_t *pd_table = paddr_to_kvaddr(get_pfn_from_pte(pdpe));
+    uint64_t *pd_table = static_cast<uint64_t*>(paddr_to_kvaddr(get_pfn_from_pte(pdpe)));
     uint32_t pd_index = (((uint64_t)vaddr >> PD_SHIFT) & ((1ul << ADDR_OFFSET) - 1));
     pd_table[pd_index] = paddr;
     pd_table[pd_index] |= X86_MMU_PG_P | X86_MMU_PG_RW;
@@ -280,7 +280,7 @@ static void update_pd_entry(vaddr_t vaddr, uint64_t pdpe, map_addr_t paddr, arch
 }
 
 static void update_pdp_entry(vaddr_t vaddr, uint64_t pml4e, map_addr_t paddr, arch_flags_t flags) {
-    uint64_t *pdp_table = paddr_to_kvaddr(get_pfn_from_pte(pml4e));
+    uint64_t *pdp_table = static_cast<uint64_t*>(paddr_to_kvaddr(get_pfn_from_pte(pml4e)));
     uint32_t pdp_index = (((uint64_t)vaddr >> PDP_SHIFT) & ((1ul << ADDR_OFFSET) - 1));
     pdp_table[pdp_index] = paddr;
     pdp_table[pdp_index] |= X86_MMU_PG_P | X86_MMU_PG_RW;
@@ -314,7 +314,7 @@ static map_addr_t *alloc_page_table(paddr_t *pa_out) {
     paddr_t pa = vm_page_to_paddr(page);
     DEBUG_ASSERT(pa != (paddr_t)-1);
 
-    map_addr_t *page_ptr = paddr_to_kvaddr(pa);
+    map_addr_t *page_ptr = static_cast<map_addr_t*>(paddr_to_kvaddr(pa));
     DEBUG_ASSERT(page_ptr);
 
     memset(page_ptr, 0, PAGE_SIZE);
@@ -349,6 +349,7 @@ static status_t x86_mmu_add_mapping(uint64_t * const pml4, const map_addr_t padd
     /* track at every level if we had to allocate a new page table for eventual cleanup code */
     bool pdp_new = false, pd_new = false, pt_new = false;
 
+    uint64_t pde = 0;
     uint64_t pdpe = 0;
     uint64_t pml4e = get_pml4_entry_from_pml4_table(vaddr, pml4);
     if (!is_pte_present(pml4e)) {
@@ -371,7 +372,6 @@ static status_t x86_mmu_add_mapping(uint64_t * const pml4, const map_addr_t padd
 
     LTRACEF_LEVEL(2, "pdpe %#llx\n", pdpe);
 
-    uint64_t pde = 0;
     if (!is_pte_present(pdpe)) {
         /* Creating a new pd table  */
         paddr_t pa;
@@ -448,7 +448,7 @@ static void x86_mmu_unmap_entry(const vaddr_t vaddr, const int level, uint64_t *
             if (!is_pte_present(table[index]))
                 return;
             next_table_pa = get_pfn_from_pte(table[index]);
-            next_table_addr = paddr_to_kvaddr(next_table_pa);
+            next_table_addr = static_cast<uint64_t*>(paddr_to_kvaddr(next_table_pa));
             LTRACEF_LEVEL(2, "next_table_addr %p\n", next_table_addr);
             break;
         case PDP_L:
@@ -457,7 +457,7 @@ static void x86_mmu_unmap_entry(const vaddr_t vaddr, const int level, uint64_t *
             if (!is_pte_present(table[index]))
                 return;
             next_table_pa = get_pfn_from_pte(table[index]);
-            next_table_addr = paddr_to_kvaddr(next_table_pa);
+            next_table_addr = static_cast<uint64_t*>(paddr_to_kvaddr(next_table_pa));
             LTRACEF_LEVEL(2, "next_table_addr %p\n", next_table_addr);
             break;
         case PD_L:
@@ -466,7 +466,7 @@ static void x86_mmu_unmap_entry(const vaddr_t vaddr, const int level, uint64_t *
             if (!is_pte_present(table[index]))
                 return;
             next_table_pa = get_pfn_from_pte(table[index]);
-            next_table_addr = paddr_to_kvaddr(next_table_pa);
+            next_table_addr = static_cast<uint64_t*>(paddr_to_kvaddr(next_table_pa));
             LTRACEF_LEVEL(2, "next_table_addr %p\n", next_table_addr);
             break;
         case PT_L:
@@ -708,7 +708,7 @@ status_t arch_mmu_init_aspace(arch_aspace_t * const aspace, const vaddr_t base, 
         aspace->base = base;
         aspace->size = size;
 
-        map_addr_t *va = pmm_alloc_kpages(1, NULL);
+        map_addr_t *va = static_cast<map_addr_t*>(pmm_alloc_kpages(1, NULL));
         if (!va) {
             return ERR_NO_MEMORY;
         }

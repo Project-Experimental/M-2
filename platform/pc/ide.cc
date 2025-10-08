@@ -210,11 +210,11 @@ static status_t ide_init(struct device *dev) {
     if (!dev->config)
         return ERR_NOT_CONFIGURED;
 
-    __UNUSED const struct platform_ide_config *config = dev->config;
+    __UNUSED const struct platform_ide_config *config = static_cast<const struct platform_ide_config*>(dev->config);
 
     LTRACEF("entry: dev %p, config %p\n", dev, config);
 
-    struct ide_driver_state *state = calloc(1, sizeof(struct ide_driver_state));
+    struct ide_driver_state *state = static_cast<struct ide_driver_state*>(calloc(1, sizeof(struct ide_driver_state)));
     if (!state) {
         res = ERR_NO_MEMORY;
         goto err;
@@ -289,8 +289,8 @@ err:
 }
 
 static enum handler_return ide_irq_handler(void *arg) {
-    struct device *dev = arg;
-    struct ide_driver_state *state = dev->state;
+    struct device *dev = static_cast<struct device*>(arg);
+    struct ide_driver_state *state = static_cast<ide_driver_state*>(dev->state);
     uint8_t val;
 
     val = ide_read_reg8(dev, IDE_REG_STATUS);
@@ -308,7 +308,7 @@ static ssize_t ide_get_block_size(struct device *dev) {
     DEBUG_ASSERT(dev);
     DEBUG_ASSERT(dev->state);
 
-    struct ide_driver_state *state = dev->state;
+    struct ide_driver_state *state = static_cast<ide_driver_state*>(dev->state);
     return state->drive[0].sector_size;
 }
 
@@ -316,7 +316,7 @@ static ssize_t ide_get_block_count(struct device *dev) {
     DEBUG_ASSERT(dev);
     DEBUG_ASSERT(dev->state);
 
-    struct ide_driver_state *state = dev->state;
+    struct ide_driver_state *state = static_cast<struct ide_driver_state*>(dev->state);
     return state->drive[0].sectors;
 }
 
@@ -324,10 +324,10 @@ static ssize_t ide_write(struct device *dev, off_t offset, const void *buf, size
     DEBUG_ASSERT(dev);
     DEBUG_ASSERT(dev->state);
 
-    __UNUSED struct ide_driver_state *state = dev->state;
+    __UNUSED struct ide_driver_state *state = static_cast<struct ide_driver_state*>(dev->state);
 
     size_t sectors, do_sectors, i;
-    const uint16_t *ubuf = buf;
+    const uint16_t *ubuf = static_cast<const uint16_t*>(buf);
     int index = 0; // hard code drive for now
     ssize_t ret = 0;
     int err;
@@ -408,10 +408,10 @@ static ssize_t ide_read(struct device *dev, off_t offset, void *buf, size_t coun
     DEBUG_ASSERT(dev);
     DEBUG_ASSERT(dev->state);
 
-    __UNUSED struct ide_driver_state *state = dev->state;
+    __UNUSED struct ide_driver_state *state = static_cast<struct ide_driver_state*>(dev->state);
 
     size_t sectors, do_sectors, i;
-    uint16_t *ubuf = buf;
+    uint16_t *ubuf = static_cast<uint16_t*>(buf);
     int index = 0; // hard code drive for now
     ssize_t ret = 0;
     int err;
@@ -491,7 +491,7 @@ done:
 static uint8_t ide_read_reg8(struct device *dev, int index) {
     DEBUG_ASSERT(index >= 0 && index < IDE_REG_NUM);
 
-    struct ide_driver_state *state = dev->state;
+    struct ide_driver_state *state = static_cast<struct ide_driver_state*>(dev->state);
 
     return inp(state->regs[index]);
 }
@@ -499,7 +499,7 @@ static uint8_t ide_read_reg8(struct device *dev, int index) {
 static uint16_t ide_read_reg16(struct device *dev, int index) {
     DEBUG_ASSERT(index >= 0 && index < IDE_REG_NUM);
 
-    struct ide_driver_state *state = dev->state;
+    struct ide_driver_state *state = static_cast<struct ide_driver_state*>(dev->state);
 
     return inpw(state->regs[index]);
 }
@@ -507,7 +507,7 @@ static uint16_t ide_read_reg16(struct device *dev, int index) {
 static uint32_t ide_read_reg32(struct device *dev, int index) {
     DEBUG_ASSERT(index >= 0 && index < IDE_REG_NUM);
 
-    struct ide_driver_state *state = dev->state;
+    struct ide_driver_state *state = static_cast<struct ide_driver_state*>(dev->state);
 
     return inpd(state->regs[index]);
 }
@@ -515,7 +515,7 @@ static uint32_t ide_read_reg32(struct device *dev, int index) {
 static void ide_read_reg8_array(struct device *dev, int index, void *buf, size_t count) {
     DEBUG_ASSERT(index >= 0 && index < IDE_REG_NUM);
 
-    struct ide_driver_state *state = dev->state;
+    struct ide_driver_state *state = static_cast<struct ide_driver_state*>(dev->state);
 
     inprep(state->regs[index], (uint8_t *) buf, count);
 }
@@ -523,7 +523,7 @@ static void ide_read_reg8_array(struct device *dev, int index, void *buf, size_t
 static void ide_read_reg16_array(struct device *dev, int index, void *buf, size_t count) {
     DEBUG_ASSERT(index >= 0 && index < IDE_REG_NUM);
 
-    struct ide_driver_state *state = dev->state;
+    struct ide_driver_state *state = static_cast<struct ide_driver_state*>(dev->state);
 
     inpwrep(state->regs[index], (uint16_t *) buf, count);
 }
@@ -531,7 +531,7 @@ static void ide_read_reg16_array(struct device *dev, int index, void *buf, size_
 static void ide_read_reg32_array(struct device *dev, int index, void *buf, size_t count) {
     DEBUG_ASSERT(index >= 0 && index < IDE_REG_NUM);
 
-    struct ide_driver_state *state = dev->state;
+    struct ide_driver_state *state = static_cast<struct ide_driver_state*>(dev->state);
 
     inpdrep(state->regs[index], (uint32_t *) buf, count);
 }
@@ -539,7 +539,7 @@ static void ide_read_reg32_array(struct device *dev, int index, void *buf, size_
 static void ide_write_reg8_array(struct device *dev, int index, const void *buf, size_t count) {
     DEBUG_ASSERT(index >= 0 && index < IDE_REG_NUM);
 
-    struct ide_driver_state *state = dev->state;
+    struct ide_driver_state *state = static_cast<struct ide_driver_state*>(dev->state);
 
     outprep(state->regs[index], (uint8_t *) buf, count);
 }
@@ -547,7 +547,7 @@ static void ide_write_reg8_array(struct device *dev, int index, const void *buf,
 static void ide_write_reg16_array(struct device *dev, int index, const void *buf, size_t count) {
     DEBUG_ASSERT(index >= 0 && index < IDE_REG_NUM);
 
-    struct ide_driver_state *state = dev->state;
+    struct ide_driver_state *state = static_cast<struct ide_driver_state*>(dev->state);
 
     outpwrep(state->regs[index], (uint16_t *) buf, count);
 }
@@ -555,7 +555,7 @@ static void ide_write_reg16_array(struct device *dev, int index, const void *buf
 static void ide_write_reg32_array(struct device *dev, int index, const void *buf, size_t count) {
     DEBUG_ASSERT(index >= 0 && index < IDE_REG_NUM);
 
-    struct ide_driver_state *state = dev->state;
+    struct ide_driver_state *state = static_cast<struct ide_driver_state*>(dev->state);
 
     outpdrep(state->regs[index], (uint32_t *) buf, count);
 }
@@ -563,7 +563,7 @@ static void ide_write_reg32_array(struct device *dev, int index, const void *buf
 static void ide_write_reg8(struct device *dev, int index, uint8_t value) {
     DEBUG_ASSERT(index >= 0 && index < IDE_REG_NUM);
 
-    struct ide_driver_state *state = dev->state;
+    struct ide_driver_state *state = static_cast<struct ide_driver_state*>(dev->state);
 
     outp(state->regs[index], value);
 }
@@ -571,7 +571,7 @@ static void ide_write_reg8(struct device *dev, int index, uint8_t value) {
 static void ide_write_reg16(struct device *dev, int index, uint16_t value) {
     DEBUG_ASSERT(index >= 0 && index < IDE_REG_NUM);
 
-    struct ide_driver_state *state = dev->state;
+    struct ide_driver_state *state = static_cast<struct ide_driver_state*>(dev->state);
 
     outpw(state->regs[index], value);
 }
@@ -579,7 +579,7 @@ static void ide_write_reg16(struct device *dev, int index, uint16_t value) {
 static void ide_write_reg32(struct device *dev, int index, uint32_t value) {
     DEBUG_ASSERT(index >= 0 && index < IDE_REG_NUM);
 
-    struct ide_driver_state *state = dev->state;
+    struct ide_driver_state *state = static_cast<struct ide_driver_state*>(dev->state);
 
     outpd(state->regs[index], value);
 }
@@ -596,7 +596,7 @@ static void ide_delay_400ns(struct device *dev) {
 }
 
 static void ide_device_reset(struct device *dev) {
-    struct ide_driver_state *state = dev->state;
+    struct ide_driver_state *state = static_cast<struct ide_driver_state*>(dev->state);
 
     lk_time_t start;
     uint8_t sect_cnt, sect_num;
@@ -701,7 +701,7 @@ static int ide_poll_status(struct device *dev, uint8_t on_mask, uint8_t off_mask
 }
 
 static void ide_detect_drives(struct device *dev) {
-    struct ide_driver_state *state = dev->state;
+    struct ide_driver_state *state = static_cast<struct ide_driver_state*>(dev->state);
     uint8_t sc = 0, sn = 0, st = 0, cl = 0, ch = 0;
 
     ide_device_select(dev, 0);
@@ -813,7 +813,7 @@ static void ide_detect_drives(struct device *dev) {
 }
 
 static int ide_wait_for_completion(struct device *dev) {
-    struct ide_driver_state *state = dev->state;
+    struct ide_driver_state *state = static_cast<struct ide_driver_state*>(dev->state);
     status_t err;
 
     err = event_wait_timeout(&state->completion, 20000);
@@ -824,9 +824,10 @@ static int ide_wait_for_completion(struct device *dev) {
 }
 
 static status_t ide_detect_ata(struct device *dev, int index) {
-    struct ide_driver_state *state = dev->state;
+    struct ide_driver_state *state = static_cast<struct ide_driver_state*>(dev->state);
     status_t res = NO_ERROR;
     uint16_t *info = NULL;
+    uint32_t lba28_sectors = 0;
     int err;
 
     ide_device_select(dev, index);
@@ -864,7 +865,7 @@ static status_t ide_detect_ata(struct device *dev, int index) {
         goto error;
     }
 
-    info = calloc(1, 512);
+    info = static_cast<uint16_t*>(calloc(1, 512));
     if (!info) {
         res = ERR_NO_MEMORY;
         goto error;
@@ -874,7 +875,7 @@ static status_t ide_detect_ata(struct device *dev, int index) {
 
     ide_read_reg16_array(dev, IDE_REG_DATA, info, 256);
 
-    uint32_t lba28_sectors = *((uint32_t *) (&info[60]));
+    lba28_sectors = *((uint32_t *) (&info[60]));
     if (lba28_sectors > 0) {
         state->drive[index].sectors = lba28_sectors;
         state->drive[index].sector_size = 512;

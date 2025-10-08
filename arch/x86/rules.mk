@@ -67,20 +67,20 @@ MODULE_SRCS += \
 	$(SUBARCH_DIR)/asm.S \
 	$(SUBARCH_DIR)/exceptions.S \
 	$(SUBARCH_DIR)/gdt.S \
-	$(SUBARCH_DIR)/mmu.c \
+	$(SUBARCH_DIR)/mmu.cc \
 	$(SUBARCH_DIR)/ops.S \
 	$(SUBARCH_DIR)/spinlock.S \
 \
-	$(LOCAL_DIR)/arch.c \
-	$(LOCAL_DIR)/cache.c \
-	$(LOCAL_DIR)/descriptor.c \
-	$(LOCAL_DIR)/faults.c \
-	$(LOCAL_DIR)/feature.c \
-	$(LOCAL_DIR)/ioapic.c \
-	$(LOCAL_DIR)/lapic.c \
-	$(LOCAL_DIR)/mp.c \
-	$(LOCAL_DIR)/pv.c \
-	$(LOCAL_DIR)/thread.c \
+	$(LOCAL_DIR)/arch.cc \
+	$(LOCAL_DIR)/cache.cc \
+	$(LOCAL_DIR)/descriptor.cc \
+	$(LOCAL_DIR)/faults.cc \
+	$(LOCAL_DIR)/feature.cc \
+	$(LOCAL_DIR)/ioapic.cc \
+	$(LOCAL_DIR)/lapic.cc \
+	$(LOCAL_DIR)/mp.cc \
+	$(LOCAL_DIR)/pv.cc \
+	$(LOCAL_DIR)/thread.cc \
 
 # legacy x86's dont have fpu support
 ifneq ($(CPU),legacy)
@@ -88,7 +88,7 @@ GLOBAL_DEFINES += \
 	X86_WITH_FPU=1
 
 MODULE_SRCS += \
-	$(LOCAL_DIR)/fpu.c
+	$(LOCAL_DIR)/fpu.cc
 else
 GLOBAL_DEFINES += WITH_NO_FP=1
 endif

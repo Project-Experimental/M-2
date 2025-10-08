@@ -85,7 +85,7 @@ status_t arch_mp_send_ipi(mp_cpu_mask_t target, mp_ipi_t ipi) {
     return NO_ERROR;
 }
 
-void x86_secondary_entry(uint cpu_num) {
+extern "C" void x86_secondary_entry(uint cpu_num) {
     // Read the local apic id from the local apic.
     // NOTE: assumes a local apic is present but since this is a secondary cpu,
     // it should be a safe assumption.
@@ -108,7 +108,7 @@ void x86_secondary_entry(uint cpu_num) {
 }
 
 status_t x86_allocate_percpu_array(uint num_cpus) {
-    x86_ap_percpus = memalign(_Alignof(x86_percpu_t), num_cpus * sizeof(x86_percpu_t));
+    x86_ap_percpus = static_cast<x86_percpu_t *>(memalign(_Alignof(x86_percpu_t), num_cpus * sizeof(x86_percpu_t)));
     if (!x86_ap_percpus) {
         return ERR_NO_MEMORY;
     }
