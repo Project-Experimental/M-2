@@ -105,8 +105,8 @@ if (( $DO_GRAPHICS )); then
         ARGS+=" -device virtio-mouse-pci"
     fi
 else
-    # ARGS+=" -nographic"
-    ARGS+=""
+    ARGS+=" -nographic"
+    # ARGS+=""
 fi
 
 if (( $DO_DISK )); then

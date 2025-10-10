@@ -144,8 +144,12 @@ void platform_init_timer(void) {
     }
 out:
 
+    auto& lapic = kernel::arch::GetLAPIC();
     // Set up the local apic for event timer interrupts
-    if (lapic_timer_init(use_invariant_tsc) == NO_ERROR) {
+    
+    status_t ret = lapic.InitTimer(use_invariant_tsc);
+    // status_t ret = lapic_timer_init(use_invariant_tsc);
+    if (ret == NO_ERROR) {
         dprintf(INFO, "PC: using LAPIC timer for event timer\n");
         use_lapic_timer = true;
     }
@@ -170,14 +174,14 @@ status_t platform_set_periodic_timer(platform_timer_callback callback, void *arg
 status_t platform_set_oneshot_timer(platform_timer_callback callback,
                                     void *arg, lk_time_t interval) {
     if (use_lapic_timer) {
-        return lapic_set_oneshot_timer(callback, arg, interval);
+        return kernel::arch::GetLAPIC().SetOneShotTimer(callback, arg, interval);
     }
     return pit_set_oneshot_timer(callback, arg, interval);
 }
 
 void platform_stop_timer(void) {
     if (use_lapic_timer) {
-        lapic_cancel_timer();
+        kernel::arch::GetLAPIC().CancelTimer();
     } else {
         pit_cancel_timer();
     }

@@ -49,10 +49,11 @@ struct int_vector {
 static struct int_vector int_table[INT_VECTORS];
 
 void platform_init_interrupts(void) {
+    auto& lapic = kernel::arch::GetLAPIC();
     pic_init();
 
 #if WITH_SMP
-    lapic_init();
+    lapic.Init();
 #endif
 
     // initialize all of the vectors
@@ -107,6 +108,7 @@ status_t unmask_interrupt(unsigned int vector) {
 
 enum handler_return platform_irq(x86_iframe_t *frame);
 enum handler_return platform_irq(x86_iframe_t *frame) {
+    auto& lapic = kernel::arch::GetLAPIC();
     // get the current vector
     unsigned int vector = frame->vector;
 
@@ -117,7 +119,7 @@ enum handler_return platform_irq(x86_iframe_t *frame) {
     // edge triggered interrupts are acked beforehand
     if (handler->flags.edge) {
         if (handler->flags.type == INTC_TYPE_MSI) {
-            lapic_eoi(vector);
+            lapic.Eoi(vector);
         } else {
             pic_eoi(vector);
         }
@@ -132,7 +134,7 @@ enum handler_return platform_irq(x86_iframe_t *frame) {
     // level triggered ack
     if (!handler->flags.edge) {
         if (handler->flags.type == INTC_TYPE_MSI) {
-            lapic_eoi(vector);
+            lapic.Eoi(vector);
         } else {
             pic_eoi(vector);
         }
@@ -231,9 +233,10 @@ static void io_apic_callback(const void *_entry, size_t entry_len, void *cookie)
 
 void platform_init_interrupts_postvm(void) {
 #if WITH_SMP
+    auto& lapic = kernel::arch::GetLAPIC();
     // Bring up the local apic on the first cpu
     // Doesn't need ACPI to detect its presence
-    lapic_init_postvm();
+    lapic.InitPostVM();
 #endif
 
 #if WITH_LIB_ACPI_LITE

@@ -64,6 +64,7 @@ status_t arch_mp_send_ipi(mp_cpu_mask_t target, mp_ipi_t ipi) {
 
     DEBUG_ASSERT(arch_ints_disabled());
     uint curr_cpu_num = arch_curr_cpu_num();
+    auto& lapic = kernel::arch::GetLAPIC();
 
     // translate the target bitmap to apic id
     while (target) {
@@ -79,7 +80,8 @@ status_t arch_mp_send_ipi(mp_cpu_mask_t target, mp_ipi_t ipi) {
         uint32_t apic_id = percpu->apic_id;
 
         // send the ipi to the target cpu
-        lapic_send_ipi(apic_id, ipi);
+        lapic.SetAPICId(apic_id);
+        lapic.SendIpi(ipi);
     }
 
     return NO_ERROR;
@@ -89,8 +91,9 @@ extern "C" void x86_secondary_entry(uint cpu_num) {
     // Read the local apic id from the local apic.
     // NOTE: assumes a local apic is present but since this is a secondary cpu,
     // it should be a safe assumption.
-    lapic_enable_on_local_cpu();
-    uint32_t apic_id = lapic_get_apic_id();
+    auto& lapic = kernel::arch::GetLAPIC();
+    lapic.EnableOnLocalCPU();
+    uint32_t apic_id = lapic.GetAPICId();
 
     x86_configure_percpu_early(cpu_num, apic_id);
 

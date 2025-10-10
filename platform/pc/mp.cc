@@ -63,17 +63,21 @@ static status_t start_cpu(uint cpu_num, uint32_t apic_id, struct bootstrap_args 
 
     // start x86 secondary cpu
 
+    auto& lapic = kernel::arch::GetLAPIC();
+
+    // Set APIC ID
+    lapic.SetAPICId(apic_id);
     // send INIT IPI
-    lapic_send_init_ipi(apic_id, true);
+    lapic.SendInitIpi(true);
     thread_sleep(10);
 
     // deassert INIT
-    lapic_send_init_ipi(apic_id, false);
+    lapic.SendInitIpi(false);
     thread_sleep(10);
 
     // send Startup IPI up to 2 times as recommended by Intel
     for (int i = 0; i < 2; i++) {
-        lapic_send_startup_ipi(apic_id, TRAMPOLINE_ADDRESS);
+        lapic.SendStartupIpi(TRAMPOLINE_ADDRESS);
 
         // Wait a little bit for the cpu to start before trying a second time
         thread_sleep(10);
