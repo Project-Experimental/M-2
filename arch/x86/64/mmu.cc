@@ -51,6 +51,33 @@ map_addr_t kernel_pdp_high[NO_OF_PT_ENTRIES] __ALIGNED(PAGE_SIZE);
 /* a big pile of page tables needed to map 64GB of memory into kernel space using 2MB pages */
 map_addr_t kernel_linear_map_pdp[(64ULL*GB) / (2*MB)];
 
+namespace kernel::arch
+{
+
+X86mmu& GetMMU(void)
+{
+    static constinit X86mmu g_mmu;
+
+    return g_mmu;
+}
+
+void X86mmu::Init(void)
+{
+
+}
+
+void X86mmu::InitEarly(void)
+{
+
+}
+
+void X86mmu::InitEarlyPerCpu(void)
+{
+
+} 
+
+};
+
 /**
  * @brief  check if the virtual address is aligned and canonical
  *

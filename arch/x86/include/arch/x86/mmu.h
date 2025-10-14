@@ -10,6 +10,8 @@
 
 #include <arch/defines.h>
 
+#include <interface/mmu/Ix86mmu.h>
+
 /* top level defines for the x86 mmu */
 /* NOTE: the top part can be included from assembly */
 #define KB (1024UL)
@@ -113,6 +115,19 @@ typedef uint64_t arch_flags_t;
 typedef uint32_t map_addr_t;
 typedef uint32_t arch_flags_t;
 #endif
+
+namespace kernel::arch
+{
+
+class X86mmu : public IX86mmu
+{
+public:
+    void Init(void) override;
+    void InitEarly(void) override;
+    void InitEarlyPerCpu(void) override;
+}
+
+};
 
 void x86_mmu_early_init(void);
 void x86_mmu_init(void);
