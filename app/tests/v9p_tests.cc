@@ -24,7 +24,7 @@ int v9p_tests(int argc, const console_cmd_args *argv) {
     struct virtio_device *dev = virtio_get_9p_device(0);
     status_t status;
 
-    if (dev == NULL) {
+    if (dev == nullptr) {
         LOGF("v9p device doesn't exist\n");
         return ERR_NOT_FOUND;
     }

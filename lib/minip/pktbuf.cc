@@ -39,7 +39,7 @@ static void *get_pool_object(void) {
 
     sem_wait(&pktbuf_sem);
     spin_lock_irqsave(&lock, state);
-    entry = pool_alloc(&pktbuf_pool);
+    entry = reinterpret_cast<pool_t*>(pool_alloc(&pktbuf_pool));
     spin_unlock_irqrestore(&lock, state);
 
     return (pktbuf_pool_object_t *) entry;
@@ -98,22 +98,28 @@ void pktbuf_add_buffer(pktbuf_t *p, u8 *buf, u32 len, uint32_t header_sz, uint32
 }
 
 pktbuf_t *pktbuf_alloc(void) {
-    pktbuf_t *p = NULL;
-    void *buf = NULL;
+    pktbuf_t *p = nullptr;
+    void *buf = nullptr;
 
-    p = get_pool_object();
+    p = reinterpret_cast<pktbuf_t*>(get_pool_object());
     if (!p) {
-        return NULL;
+        return nullptr;
     }
 
     buf = get_pool_object();
     if (!buf) {
         free_pool_object((pktbuf_pool_object_t *)p, false);
-        return NULL;
+        return nullptr;
     }
 
     memset(p, 0, sizeof(pktbuf_t));
-    pktbuf_add_buffer(p, buf, PKTBUF_SIZE, PKTBUF_MAX_HDR, 0, free_pktbuf_buf_cb, NULL);
+    pktbuf_add_buffer(p, 
+        reinterpret_cast<uint8_t*>(buf), 
+        PKTBUF_SIZE, 
+        PKTBUF_MAX_HDR, 
+        0, 
+        free_pktbuf_buf_cb, 
+        nullptr);
     return p;
 }
 
@@ -179,7 +185,7 @@ void *pktbuf_consume(pktbuf_t *p, size_t sz) {
     void *data = p->data;
 
     if (sz > p->dlen) {
-        return NULL;
+        return nullptr;
     }
 
     p->data += sz;

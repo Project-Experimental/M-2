@@ -102,7 +102,7 @@ void lk_main(ulong arg0, ulong arg1, ulong arg2, ulong arg3) {
 
     // create a thread to complete system initialization
     dprintf(SPEW, "creating bootstrap completion thread\n");
-    thread_t *t = thread_create("bootstrap2", &bootstrap2, NULL, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE);
+    thread_t *t = thread_create("bootstrap2", &bootstrap2, nullptr, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE);
     thread_set_pinned_cpu(t, 0);
     thread_detach(t);
     thread_resume(t);
@@ -169,7 +169,7 @@ void lk_init_secondary_cpus(uint secondary_cpu_count) {
     for (uint i = 0; i < secondary_cpu_count; i++) {
         dprintf(SPEW, "creating bootstrap completion thread for cpu %d\n", i + 1);
         thread_t *t = thread_create("secondarybootstrap2",
-                                    &secondary_cpu_bootstrap2, NULL,
+                                    &secondary_cpu_bootstrap2, nullptr,
                                     DEFAULT_PRIORITY, DEFAULT_STACK_SIZE);
         t->pinned_cpu = i + 1;
         thread_detach(t);

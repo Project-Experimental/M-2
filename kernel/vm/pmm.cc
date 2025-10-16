@@ -58,7 +58,7 @@ vm_page_t *paddr_to_vm_page(paddr_t addr) {
             return &a->page_array[index];
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 status_t pmm_add_arena(pmm_arena_t *arena) {
@@ -88,7 +88,7 @@ done_add:
 
     /* allocate an array of pages to back this one */
     size_t page_count = arena->size / PAGE_SIZE;
-    arena->page_array = boot_alloc_mem(page_count * sizeof(vm_page_t));
+    arena->page_array = reinterpret_cast<vm_page*>(boot_alloc_mem(page_count * sizeof(vm_page_t)));
 
     /* initialize all of the pages */
     memset(arena->page_array, 0, page_count * sizeof(vm_page_t));
@@ -144,7 +144,7 @@ vm_page_t *pmm_alloc_page(void) {
 
     size_t ret = pmm_alloc_pages(1, &list);
     if (ret == 0) {
-        return NULL;
+        return nullptr;
     }
 
     DEBUG_ASSERT(ret == 1);
@@ -247,7 +247,7 @@ void *pmm_alloc_kpages(uint count, struct list_node *list) {
     if (count == 1) {
         vm_page_t *p = pmm_alloc_page();
         if (!p) {
-            return NULL;
+            return nullptr;
         }
 
         return paddr_to_kvaddr(vm_page_to_paddr(p));
@@ -256,7 +256,7 @@ void *pmm_alloc_kpages(uint count, struct list_node *list) {
     paddr_t pa;
     size_t alloc_count = pmm_alloc_contiguous(count, PAGE_SIZE_SHIFT, &pa, list);
     if (alloc_count == 0)
-        return NULL;
+        return nullptr;
 
     return paddr_to_kvaddr(pa);
 }
@@ -468,7 +468,7 @@ usage:
     } else if (!strcmp(argv[1].str, "alloc_kpages")) {
         if (argc < 3) goto notenoughargs;
 
-        void *ptr = pmm_alloc_kpages(argv[2].u, NULL);
+        void *ptr = pmm_alloc_kpages(argv[2].u, nullptr);
         printf("pmm_alloc_kpages returns %p\n", ptr);
     } else if (!strcmp(argv[1].str, "alloc_contig")) {
         if (argc < 4) goto notenoughargs;

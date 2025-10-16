@@ -67,7 +67,7 @@ void platform_init_debug(void) {
     /* finish uart init to get rx going */
     cbuf_initialize(&console_input_buf, 1024);
 
-    register_int_handler(uart_irq, uart_irq_handler, NULL);
+    register_int_handler(uart_irq, uart_irq_handler, nullptr);
     unmask_interrupt(uart_irq);
 
     outp(uart_io_port + 1, 0x1); // enable receive data available interrupt

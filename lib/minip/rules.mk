@@ -9,14 +9,14 @@ MODULE_DEPS := \
 	lib/pool
 
 MODULE_SRCS += \
-	$(LOCAL_DIR)/arp.c \
-	$(LOCAL_DIR)/chksum.c \
-	$(LOCAL_DIR)/dhcp.cpp \
-	$(LOCAL_DIR)/lk_console.c \
-	$(LOCAL_DIR)/minip.c \
-	$(LOCAL_DIR)/net_timer.c \
-	$(LOCAL_DIR)/pktbuf.c \
-	$(LOCAL_DIR)/tcp.c \
-	$(LOCAL_DIR)/udp.c
+	$(LOCAL_DIR)/arp.cc \
+	$(LOCAL_DIR)/chksum.cc \
+	$(LOCAL_DIR)/dhcp.cc \
+	$(LOCAL_DIR)/lk_console.cc \
+	$(LOCAL_DIR)/minip.cc \
+	$(LOCAL_DIR)/net_timer.cc \
+	$(LOCAL_DIR)/pktbuf.cc \
+	$(LOCAL_DIR)/tcp.cc \
+	$(LOCAL_DIR)/udp.cc
 
 include make/module.mk

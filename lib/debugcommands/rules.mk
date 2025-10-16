@@ -6,6 +6,6 @@ MODULE_DEPS += \
 	lib/console
 
 MODULE_SRCS += \
-	$(LOCAL_DIR)/debugcommands.c
+	$(LOCAL_DIR)/debugcommands.cc
 
 include make/module.mk

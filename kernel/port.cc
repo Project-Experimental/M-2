@@ -83,7 +83,7 @@ static port_buf_t *make_buf(bool big) {
     uint size = sizeof(port_buf_t) + ((pk_count - 1) * sizeof(port_packet_t));
     port_buf_t *buf = reinterpret_cast<port_buf_t *>(new uint8_t[size]);
     if (!buf)
-        return NULL;
+        return nullptr;
     buf->log2 = log2_uint(pk_count);
     buf->head = buf->tail = 0;
     buf->avail = pk_count;
@@ -141,14 +141,14 @@ status_t port_create(const char *name, port_mode_t mode, port_t *port) {
     strlcpy(stack_wp.name, name, sizeof(stack_wp.name));
 
     // lookup for existing port, return that if found.
-    write_port_t *wp = NULL;
+    write_port_t *wp = nullptr;
     THREAD_LOCK(state1);
     list_for_every_entry(&write_port_list, wp, write_port_t, node) {
         if (strcmp(wp->name, name) == 0) {
             // can't return closed or partial ports.
             if (wp->magic == WRITEPORT_MAGIC_X ||
                 wp->magic == PORTHOLD_MAGIC)
-                wp = NULL;
+                wp = nullptr;
             THREAD_UNLOCK(state1);
             if (wp) {
                 *port = reinterpret_cast<port_t>(wp);
@@ -222,7 +222,7 @@ status_t port_open(const char *name, void *ctx, port_t *port) {
     status_t rc = ERR_NOT_FOUND;
 
     THREAD_LOCK(state);
-    write_port_t *wp = NULL;
+    write_port_t *wp = nullptr;
     list_for_every_entry(&write_port_list, wp, write_port_t, node) {
         if (strcmp(wp->name, name) == 0 &&
             wp->magic != PORTHOLD_MAGIC) {
@@ -232,7 +232,7 @@ status_t port_open(const char *name, void *ctx, port_t *port) {
                 // this is the first read port; transfer the circular buffer.
                 list_add_tail(&wp->rp_list, &rp->w_node);
                 rp->buf = wp->buf;
-                wp->buf = NULL;
+                wp->buf = nullptr;
                 rc = NO_ERROR;
             } else if (buf) {
                 // not first read port.
@@ -244,7 +244,7 @@ status_t port_open(const char *name, void *ctx, port_t *port) {
                 // use the new (small) circular buffer.
                 list_add_tail(&wp->rp_list, &rp->w_node);
                 rp->buf = buf;
-                buf = NULL;
+                buf = nullptr;
                 rc = NO_ERROR;
             } else {
                 // |buf| allocation failed and the buffer was needed.
@@ -295,7 +295,7 @@ status_t port_group(port_t *ports, size_t count, port_t *group) {
             // wrong type of port, or port already part of a group,
             // in any case, undo the changes to the previous read ports.
             for (size_t jx = 0; jx != ix; jx++) {
-                ((read_port_t *)ports[jx])->gport = NULL;
+                ((read_port_t *)ports[jx])->gport = nullptr;
             }
             rc = ERR_BAD_HANDLE;
             break;
@@ -492,7 +492,7 @@ status_t port_destroy(port_t port) {
         return ERR_INVALID_ARGS;
 
     write_port_t *wp = (write_port_t *) port;
-    port_buf_t *buf = NULL;
+    port_buf_t *buf = nullptr;
 
     THREAD_LOCK(state);
     if (wp->magic != WRITEPORT_MAGIC_X) {
@@ -516,7 +516,7 @@ status_t port_destroy(port_t port) {
                 wait_queue_wake_all(&rp->gport->wait, false, ERR_CANCELLED);
             }
             // remove self from reader ports.
-            rp->wport = NULL;
+            rp->wport = nullptr;
         }
     }
 
@@ -533,7 +533,7 @@ status_t port_close(port_t port) {
         return ERR_INVALID_ARGS;
 
     read_port_t *rp = (read_port_t *) port;
-    port_buf_t *buf = NULL;
+    port_buf_t *buf = nullptr;
 
     THREAD_LOCK(state);
     if (rp->magic == READPORT_MAGIC) {
@@ -543,7 +543,7 @@ status_t port_close(port_t port) {
             list_delete(&rp->w_node);
             if (list_is_empty(&rp->wport->rp_list)) {
                 rp->wport->buf = rp->buf;
-                rp->buf = NULL;
+                rp->buf = nullptr;
             } else {
                 buf = rp->buf;
             }
@@ -562,9 +562,9 @@ status_t port_close(port_t port) {
         // wake up waiters.
         wait_queue_destroy(&pg->wait, true);
         // remove self from reader ports.
-        rp = NULL;
+        rp = nullptr;
         list_for_every_entry(&pg->rp_list, rp, read_port_t, g_node) {
-            rp->gport = NULL;
+            rp->gport = nullptr;
         }
         pg->magic = 0;
 

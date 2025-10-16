@@ -40,7 +40,7 @@ static void *map_region(paddr_t pa, size_t len, const char *name) {
   size_t map_len = ROUNDUP(len + align_offset, PAGE_SIZE);
 
   uint perms = ARCH_MMU_FLAG_PERM_RO;
-  if (arch_mmu_supports_nx_mappings()) {
+  if (kernel::arch::Mmu::IsSupportsNXMappings()) {
     perms |= ARCH_MMU_FLAG_PERM_NO_EXECUTE;
   }
 

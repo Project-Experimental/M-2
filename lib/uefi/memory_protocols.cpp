@@ -114,7 +114,7 @@ __WEAK void *alloc_page(size_t size, size_t align_log2) {
     printf("Failed to allocate physical memory size %zu\n", size);
     return nullptr;
   }
-  int ret = arch_mmu_map(&aspace->arch_aspace, pa, pa, size / PAGE_SIZE, 0);
+  int ret = kernel::arch::Mmu(&aspace->arch_aspace).Map(pa, pa, size / PAGE_SIZE, 0);
   if (ret != 0) {
     printf("Failed to arch_mmu_map(0x%lx)\n", pa);
     return nullptr;

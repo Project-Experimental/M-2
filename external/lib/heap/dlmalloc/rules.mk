@@ -12,6 +12,6 @@ MODULE := $(LOCAL_DIR)
 MODULE_DEFINES=MSPACES=1
 
 MODULE_SRCS += \
-	$(LOCAL_DIR)/dlmalloc.c
+	$(LOCAL_DIR)/dlmalloc.cc
 
 include make/module.mk

@@ -35,7 +35,7 @@ void vmm_init_preheap(void) {
     _kernel_aspace.flags = VMM_ASPACE_FLAG_KERNEL;
     list_initialize(&_kernel_aspace.region_list);
 
-    arch_mmu_init_aspace(&_kernel_aspace.arch_aspace, KERNEL_ASPACE_BASE, KERNEL_ASPACE_SIZE, ARCH_ASPACE_FLAG_KERNEL);
+    kernel::arch::Mmu(&_kernel_aspace.arch_aspace).Init(KERNEL_ASPACE_BASE, KERNEL_ASPACE_SIZE, ARCH_ASPACE_FLAG_KERNEL);
 
     list_add_head(&aspace_list, &_kernel_aspace.node);
 }
@@ -94,9 +94,9 @@ static vmm_region_t *alloc_region_struct(const char *name, vaddr_t base, size_t 
         uint flags, uint arch_mmu_flags) {
     DEBUG_ASSERT(name);
 
-    vmm_region_t *r = calloc(1, sizeof(vmm_region_t));
+    vmm_region_t *r = reinterpret_cast<vmm_region_t*>(calloc(1, sizeof(vmm_region_t)));
     if (!r)
-        return NULL;
+        return nullptr;
 
     strlcpy(r->name, name, sizeof(r->name));
     r->base = base;
@@ -222,10 +222,10 @@ static vaddr_t alloc_spot(vmm_aspace_t *aspace, size_t size, uint8_t align_pow2,
     vaddr_t align = 1UL << align_pow2;
 
     vaddr_t spot;
-    vmm_region_t *r = NULL;
+    vmm_region_t *r = nullptr;
 
     /* try to pick spot at the beginning of address space */
-    if (check_gap(aspace, NULL,
+    if (check_gap(aspace, nullptr,
                   list_peek_head_type(&aspace->region_list, vmm_region_t, node),
                   &spot, align, size, arch_mmu_flags))
         goto done;
@@ -254,7 +254,7 @@ static vmm_region_t *alloc_region(vmm_aspace_t *aspace, const char *name, size_t
     /* make a region struct for it and stick it in the list */
     vmm_region_t *r = alloc_region_struct(name, vaddr, size, region_flags, arch_mmu_flags);
     if (!r)
-        return NULL;
+        return nullptr;
 
     /* if they ask us for a specific spot, put it there */
     if (vmm_flags & VMM_FLAG_VALLOC_SPECIFIC) {
@@ -262,11 +262,11 @@ static vmm_region_t *alloc_region(vmm_aspace_t *aspace, const char *name, size_t
         if (add_region_to_aspace(aspace, r) < 0) {
             /* didn't fit */
             free(r);
-            return NULL;
+            return nullptr;
         }
     } else {
         /* allocate a virtual slot for it */
-        struct list_node *before = NULL;
+        struct list_node *before = nullptr;
 
         vaddr = alloc_spot(aspace, size, align_pow2, arch_mmu_flags, &before);
         LTRACEF("alloc_spot returns 0x%lx, before %p\n", vaddr, before);
@@ -274,10 +274,10 @@ static vmm_region_t *alloc_region(vmm_aspace_t *aspace, const char *name, size_t
         if (vaddr == (vaddr_t)-1) {
             LTRACEF("failed to find spot\n");
             free(r);
-            return NULL;
+            return nullptr;
         }
 
-        DEBUG_ASSERT(before != NULL);
+        DEBUG_ASSERT(before != nullptr);
 
         r->base = (vaddr_t)vaddr;
 
@@ -315,7 +315,8 @@ status_t vmm_reserve_space(vmm_aspace_t *aspace, const char *name, size_t size, 
 
     /* lookup how it's already mapped */
     uint arch_mmu_flags = 0;
-    arch_mmu_query(&aspace->arch_aspace, vaddr, NULL, &arch_mmu_flags);
+    ulong tmp;
+    kernel::arch::Mmu(&aspace->arch_aspace).Query(vaddr, tmp, arch_mmu_flags);
 
     /* build a new region structure */
     vmm_region_t *r = alloc_region(aspace, name, size, vaddr, 0,
@@ -372,7 +373,7 @@ status_t vmm_alloc_physical(vmm_aspace_t *aspace, const char *name, size_t size,
         *ptr = (void *)r->base;
 
     /* map all of the pages */
-    err = arch_mmu_map(&aspace->arch_aspace, r->base, paddr, size / PAGE_SIZE, arch_mmu_flags);
+    err = kernel::arch::Mmu(&aspace->arch_aspace).Map(r->base, paddr, size / PAGE_SIZE, arch_mmu_flags);
     if (err < NO_ERROR) {
         LTRACEF("arch_mmu_map returns %d\n", err);
         goto err_free_r;
@@ -414,6 +415,11 @@ status_t vmm_alloc_contiguous(vmm_aspace_t *aspace, const char *name, size_t siz
         name = "";
 
     vaddr_t vaddr = 0;
+    paddr_t pa = 0;
+    vmm_region_t *r = nullptr;
+    vm_page_t *p;
+
+    size_t count = 0;
 
     /* if they're asking for a specific spot, copy the address */
     if (vmm_flags & VMM_FLAG_VALLOC_SPECIFIC) {
@@ -429,9 +435,8 @@ status_t vmm_alloc_contiguous(vmm_aspace_t *aspace, const char *name, size_t siz
     struct list_node page_list;
     list_initialize(&page_list);
 
-    paddr_t pa = 0;
     /* allocate a run of physical pages */
-    size_t count = pmm_alloc_contiguous(size / PAGE_SIZE, align_pow2, &pa, &page_list);
+    count = pmm_alloc_contiguous(size / PAGE_SIZE, align_pow2, &pa, &page_list);
     if (count < size / PAGE_SIZE) {
         DEBUG_ASSERT(count == 0); /* check that the pmm didn't allocate a partial run */
         err = ERR_NO_MEMORY;
@@ -441,7 +446,7 @@ status_t vmm_alloc_contiguous(vmm_aspace_t *aspace, const char *name, size_t siz
     mutex_acquire(&vmm_lock);
 
     /* allocate a region and put it in the aspace list */
-    vmm_region_t *r = alloc_region(aspace, name, size, vaddr, align_pow2, vmm_flags,
+    r = alloc_region(aspace, name, size, vaddr, align_pow2, vmm_flags,
                                    VMM_REGION_FLAG_PHYSICAL, arch_mmu_flags);
     if (!r) {
         err = ERR_NO_MEMORY;
@@ -453,14 +458,13 @@ status_t vmm_alloc_contiguous(vmm_aspace_t *aspace, const char *name, size_t siz
         *ptr = (void *)r->base;
 
     /* map all of the pages */
-    err = arch_mmu_map(&aspace->arch_aspace, r->base, pa, size / PAGE_SIZE, arch_mmu_flags);
+    err = kernel::arch::Mmu(&aspace->arch_aspace).Map(r->base, pa, size / PAGE_SIZE, arch_mmu_flags);
     if (err < NO_ERROR) {
         LTRACEF("arch_mmu_map returns %d\n", err);
         goto err_free_r;
     }
 
     /* add all of the pages to this region */
-    vm_page_t *p;
     while ((p = list_remove_head_type(&page_list, vm_page_t, node))) {
         list_add_tail(&r->page_list, &p->node);
     }
@@ -500,7 +504,13 @@ status_t vmm_alloc(vmm_aspace_t *aspace, const char *name, size_t size, void **p
     if (!name)
         name = "";
 
+    size_t count = 0;
+
+    struct list_node page_list;
     vaddr_t vaddr = 0;
+    vm_page_t *p = nullptr;
+    vmm_region_t *r = nullptr;
+    vaddr_t va = 0;
 
     /* if they're asking for a specific spot, copy the address */
     if (vmm_flags & VMM_FLAG_VALLOC_SPECIFIC) {
@@ -515,10 +525,9 @@ status_t vmm_alloc(vmm_aspace_t *aspace, const char *name, size_t size, void **p
     /* allocate physical memory up front, in case it cant be satisfied */
 
     /* allocate a random pile of pages */
-    struct list_node page_list;
     list_initialize(&page_list);
 
-    size_t count = pmm_alloc_pages(size / PAGE_SIZE, &page_list);
+    count = pmm_alloc_pages(size / PAGE_SIZE, &page_list);
     DEBUG_ASSERT(count <= size);
     if (count < size / PAGE_SIZE) {
         LTRACEF("failed to allocate enough pages (asked for %zu, got %zu)\n", size / PAGE_SIZE, count);
@@ -530,7 +539,7 @@ status_t vmm_alloc(vmm_aspace_t *aspace, const char *name, size_t size, void **p
     mutex_acquire(&vmm_lock);
 
     /* allocate a region and put it in the aspace list */
-    vmm_region_t *r = alloc_region(aspace, name, size, vaddr, align_pow2, vmm_flags,
+    r = alloc_region(aspace, name, size, vaddr, align_pow2, vmm_flags,
                                    VMM_REGION_FLAG_PHYSICAL, arch_mmu_flags);
     if (!r) {
         err = ERR_NO_MEMORY;
@@ -539,8 +548,7 @@ status_t vmm_alloc(vmm_aspace_t *aspace, const char *name, size_t size, void **p
 
     /* map all of the pages */
     /* TODO: use smarter algorithm that tries to build runs */
-    vm_page_t *p;
-    vaddr_t va = r->base;
+    va = r->base;
     DEBUG_ASSERT(IS_PAGE_ALIGNED(va));
     while ((p = list_remove_head_type(&page_list, vm_page_t, node))) {
         DEBUG_ASSERT(va <= r->base + r->size - 1);
@@ -548,7 +556,7 @@ status_t vmm_alloc(vmm_aspace_t *aspace, const char *name, size_t size, void **p
         paddr_t pa = vm_page_to_paddr(p);
         DEBUG_ASSERT(IS_PAGE_ALIGNED(pa));
 
-        err = arch_mmu_map(&aspace->arch_aspace, va, pa, 1, arch_mmu_flags);
+        err = kernel::arch::Mmu(&aspace->arch_aspace).Map(va, pa, 1, arch_mmu_flags);
         if (err < NO_ERROR) { // TODO: deal with difference between 0 and 1 returns in some arches
             // add the page back to the list so it gets freed
             list_add_tail(&page_list, &p->node);
@@ -596,7 +604,7 @@ static vmm_region_t *vmm_find_region(const vmm_aspace_t *aspace, vaddr_t vaddr) 
     DEBUG_ASSERT(is_mutex_held(&vmm_lock));
 
     if (!aspace)
-        return NULL;
+        return nullptr;
 
     /* search the region list */
     list_for_every_entry(&aspace->region_list, r, vmm_region_t, node) {
@@ -604,7 +612,7 @@ static vmm_region_t *vmm_find_region(const vmm_aspace_t *aspace, vaddr_t vaddr) 
             return r;
     }
 
-    return NULL;
+    return nullptr;
 }
 
 /* partially remove a region from the region list, but do not free the pages or the structure itself */
@@ -622,7 +630,7 @@ static status_t vmm_remove_region_locked(vmm_aspace_t *aspace, vaddr_t vaddr, vm
     list_delete(&r->node);
 
     /* unmap it */
-    arch_mmu_unmap(&aspace->arch_aspace, r->base, r->size / PAGE_SIZE);
+    kernel::arch::Mmu(&aspace->arch_aspace).UnMap(r->base, r->size / PAGE_SIZE);
 
     *r_out = r;
 
@@ -658,7 +666,9 @@ status_t vmm_free_region(vmm_aspace_t *aspace, vaddr_t vaddr) {
 status_t vmm_create_aspace(vmm_aspace_t **_aspace, const char *name, uint flags) {
     status_t err;
 
-    vmm_aspace_t *aspace = calloc(1, sizeof(vmm_aspace_t));
+    auto mmu = kernel::arch::Mmu();
+
+    vmm_aspace_t *aspace = reinterpret_cast<vmm_aspace_t*>(calloc(1, sizeof(vmm_aspace_t)));
     if (!aspace)
         return ERR_NO_MEMORY;
 
@@ -678,8 +688,9 @@ status_t vmm_create_aspace(vmm_aspace_t **_aspace, const char *name, uint flags)
     }
 
     /* initialize the arch specific component to our address space */
-    err = arch_mmu_init_aspace(&aspace->arch_aspace, aspace->base, aspace->size,
-                               (aspace->flags & VMM_ASPACE_FLAG_KERNEL) ? ARCH_ASPACE_FLAG_KERNEL : 0);
+    mmu.SetASpace(&aspace->arch_aspace);
+    err = mmu.Init(aspace->base, aspace->size,
+                    (aspace->flags & VMM_ASPACE_FLAG_KERNEL) ? ARCH_ASPACE_FLAG_KERNEL : 0);
     if (err < 0) {
         free(aspace);
         return err;
@@ -698,6 +709,7 @@ status_t vmm_create_aspace(vmm_aspace_t **_aspace, const char *name, uint flags)
 }
 
 status_t vmm_free_aspace(vmm_aspace_t *aspace) {
+
     /* pop it out of the global aspace list */
     mutex_acquire(&vmm_lock);
     if (!list_in_list(&aspace->node)) {
@@ -715,7 +727,7 @@ status_t vmm_free_aspace(vmm_aspace_t *aspace) {
         list_add_tail(&region_list, &r->node);
 
         /* unmap it */
-        arch_mmu_unmap(&aspace->arch_aspace, r->base, r->size / PAGE_SIZE);
+        kernel::arch::Mmu(&aspace->arch_aspace).UnMap(r->base, r->size / PAGE_SIZE);
     }
     mutex_release(&vmm_lock);
 
@@ -732,13 +744,13 @@ status_t vmm_free_aspace(vmm_aspace_t *aspace) {
     thread_t *current_thread = get_current_thread();
     if (current_thread->aspace == aspace) {
         THREAD_LOCK(state);
-        current_thread->aspace = NULL;
-        vmm_context_switch(aspace, NULL);
+        current_thread->aspace = nullptr;
+        vmm_context_switch(aspace, nullptr);
         THREAD_UNLOCK(state);
     }
 
     /* destroy the arch portion of the aspace */
-    arch_mmu_destroy_aspace(&aspace->arch_aspace);
+    kernel::arch::Mmu(&aspace->arch_aspace).Destroy();
 
     /* free the aspace */
     free(aspace);
@@ -749,7 +761,7 @@ status_t vmm_free_aspace(vmm_aspace_t *aspace) {
 void vmm_context_switch(vmm_aspace_t *oldspace, vmm_aspace_t *newaspace) {
     DEBUG_ASSERT(thread_lock_held());
 
-    arch_mmu_context_switch(newaspace ? &newaspace->arch_aspace : NULL);
+    kernel::arch::Mmu().ContextSwitch(newaspace ? &newaspace->arch_aspace : nullptr);
 }
 
 vmm_aspace_t* vmm_set_active_aspace(vmm_aspace_t *aspace) {
@@ -856,12 +868,12 @@ usage:
     } else if (!strcmp(argv[1].str, "free_aspace")) {
         if (argc < 2) goto notenoughargs;
 
-        vmm_aspace_t *aspace = (void *)argv[2].u;
+        vmm_aspace_t *aspace = reinterpret_cast<vmm_aspace_t*>(argv[2].u);
         if (test_aspace == aspace)
-            test_aspace = NULL;
+            test_aspace = nullptr;
 
         if (get_current_thread()->aspace == aspace) {
-            get_current_thread()->aspace = NULL;
+            get_current_thread()->aspace = nullptr;
             thread_sleep(1); // hack
         }
 
@@ -870,7 +882,7 @@ usage:
     } else if (!strcmp(argv[1].str, "set_test_aspace")) {
         if (argc < 2) goto notenoughargs;
 
-        test_aspace = (void *)argv[2].u;
+        test_aspace = reinterpret_cast<vmm_aspace_t*>(argv[2].u);
         get_current_thread()->aspace = test_aspace;
         thread_sleep(1); // XXX hack to force it to reschedule and thus load the aspace
     } else {

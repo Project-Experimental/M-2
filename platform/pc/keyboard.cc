@@ -313,8 +313,8 @@ void platform_init_keyboard(cbuf_t *buffer) {
         return;
     }
 
-    register_int_handler(INT_KEYBOARD, &i8042_interrupt, NULL);
+    register_int_handler(INT_KEYBOARD, &i8042_interrupt, nullptr);
     unmask_interrupt(INT_KEYBOARD);
 
-    i8042_interrupt(NULL);
+    i8042_interrupt(nullptr);
 }

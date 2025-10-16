@@ -221,7 +221,7 @@ static int single_thread_basic(void) {
 
 static int ping_pong_thread(void *arg) {
     port_t r_port;
-    status_t st = port_open("ping_port", NULL, &r_port);
+    status_t st = port_open("ping_port", nullptr, &r_port);
     if (st < 0) {
         printf("thread: could not open port, status = %d\n", st);
         return __LINE__;
@@ -294,7 +294,7 @@ static int race_thread(void *arg)
     int tid = (int)(intptr_t)arg;
 
     printf("thread %d: connecting to control port\n", tid);
-    status_t st = port_open("race_ctl", NULL, &r_port);
+    status_t st = port_open("race_ctl", nullptr, &r_port);
     if (st < 0) {
         printf("thread %d: could not open control port, status = %d\n", tid, st);
         return __LINE__;
@@ -417,7 +417,7 @@ int two_threads_race(void)
     port_t r_port0, r_port1;
     printf("control: connecting to thread 0 . . .\n");
     while (true) {
-        st = port_open(kStatusPortNames[0], NULL, &r_port0);
+        st = port_open(kStatusPortNames[0], nullptr, &r_port0);
         if (st == NO_ERROR) {
             break;
         } else if (st == ERR_NOT_FOUND) {
@@ -430,7 +430,7 @@ int two_threads_race(void)
     }
     printf("control: connecting to thread 1 . . .\n");
     while (true) {
-        st = port_open(kStatusPortNames[1], NULL, &r_port1);
+        st = port_open(kStatusPortNames[1], nullptr, &r_port1);
         if (st == NO_ERROR) {
             break;
         } else if (st == ERR_NOT_FOUND) {
@@ -527,16 +527,16 @@ static int two_threads_basic(void) {
     }
 
     thread_t *t1 = thread_create(
-                       "worker1", &ping_pong_thread, NULL, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE);
+                       "worker1", &ping_pong_thread, nullptr, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE);
     thread_t *t2 = thread_create(
-                       "worker2", &ping_pong_thread, NULL, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE);
+                       "worker2", &ping_pong_thread, nullptr, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE);
     thread_resume(t1);
     thread_resume(t2);
 
     // wait for the pong port to be created, the two threads race to do it.
     port_t r_port;
     while (true) {
-        st = port_open("pong_port", NULL, &r_port);
+        st = port_open("pong_port", nullptr, &r_port);
         if (st == NO_ERROR) {
             break;
         } else if (st == ERR_NOT_FOUND) {
@@ -740,7 +740,7 @@ static int group_basic(void) {
     }
 
     thread_t *wt = thread_create(
-                       "g_watcher", &group_watcher_thread, NULL, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE);
+                       "g_watcher", &group_watcher_thread, nullptr, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE);
     thread_resume(wt);
 
     port_t w_test_port1, r_test_port1;
@@ -911,7 +911,7 @@ static int group_waiting(void) {
 
     // Create an empty port group.
     port_t pg;
-    st = port_group(NULL, 0, &pg);
+    st = port_group(nullptr, 0, &pg);
     if (st < 0)
         return __LINE__;
 

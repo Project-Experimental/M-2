@@ -42,7 +42,7 @@ struct ioapic {
     // TODO: spinlock for this ioapic
 };
 
-static struct ioapic *ioapics = NULL;
+static struct ioapic *ioapics = nullptr;
 static size_t num_ioapics = 0;
 
 static uint32_t ioapic_read(struct ioapic *ioapic, enum ioapic_regs reg) {
@@ -75,7 +75,7 @@ status_t ioapic_init(int index, paddr_t phys_addr, uint apic_id, uint gsi_base) 
         // TODO: free up the newly extended ioapic struct
         return err;
     }
-    DEBUG_ASSERT(ioapic->mmio != NULL);
+    DEBUG_ASSERT(ioapic->mmio != nullptr);
 
     ioapic->phys_addr = phys_addr;
     ioapic->apic_id = apic_id;

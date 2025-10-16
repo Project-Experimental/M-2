@@ -17,8 +17,8 @@
 
 #define ASSERT_EQ(a, b)                                            \
     do {                                                           \
-        typeof(a) _a = (a);                                        \
-        typeof(b) _b = (b);                                        \
+        auto _a = (a);                                        \
+        auto _b = (b);                                        \
         if (_a != _b) {                                            \
             panic("%lu != %lu (%s:%d)\n", (ulong)a, (ulong)b, __FILE__, __LINE__); \
         }                                                          \
@@ -26,8 +26,8 @@
 
 #define ASSERT_LEQ(a, b)                                               \
     do {                                                               \
-        typeof(a) _a = (a);                                            \
-        typeof(b) _b = (b);                                            \
+        auto _a = (a);                                            \
+        auto _b = (b);                                            \
         if (_a > _b) {                                                 \
             panic("%lu not <= %lu (%s:%d)\n", (ulong)a, (ulong)b, __FILE__, __LINE__); \
         }                                                              \

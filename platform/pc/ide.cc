@@ -826,7 +826,7 @@ static int ide_wait_for_completion(struct device *dev) {
 static status_t ide_detect_ata(struct device *dev, int index) {
     struct ide_driver_state *state = static_cast<struct ide_driver_state*>(dev->state);
     status_t res = NO_ERROR;
-    uint16_t *info = NULL;
+    uint16_t *info = nullptr;
     uint32_t lba28_sectors = 0;
     int err;
 

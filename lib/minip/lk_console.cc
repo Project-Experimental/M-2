@@ -109,7 +109,7 @@ minip_usage:
 #define BUFSIZE 1470
                 uint8_t *buf;
 
-                buf = malloc(BUFSIZE);
+                buf = reinterpret_cast<uint8_t*>(malloc(BUFSIZE));
                 if (!buf) {
                     udp_close(handle);
                     return -1;

@@ -147,7 +147,7 @@ static int cmd_threadload(int argc, const console_cmd_args *argv) {
     if (showthreadload == false) {
         // start the display
         timer_initialize(&tltimer);
-        timer_set_periodic(&tltimer, 1000, &threadload, NULL);
+        timer_set_periodic(&tltimer, 1000, &threadload, nullptr);
         showthreadload = true;
     } else {
         timer_cancel(&tltimer);

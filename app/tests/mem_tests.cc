@@ -27,7 +27,7 @@ static void mem_test_fail(void *ptr, uint32_t should, uint32_t is) {
 }
 
 static status_t do_pattern_test(void *ptr, size_t len, uint32_t pat) {
-    volatile uint32_t *vbuf32 = ptr;
+    volatile uint32_t *vbuf32 = reinterpret_cast<uint32_t*>(ptr);
     size_t i;
 
     printf("\tpattern 0x%08x\n", pat);
@@ -46,7 +46,7 @@ static status_t do_pattern_test(void *ptr, size_t len, uint32_t pat) {
 }
 
 static status_t do_moving_inversion_test(void *ptr, size_t len, uint32_t pat) {
-    volatile uint32_t *vbuf32 = ptr;
+    volatile uint32_t *vbuf32 = reinterpret_cast<uint32_t*>(ptr);
     size_t i;
 
     printf("\tpattern 0x%08x\n", pat);
@@ -98,7 +98,7 @@ static void do_mem_tests(void *ptr, size_t len) {
 
     /* test 1: simple write address to memory, read back */
     printf("test 1: simple address write, read back\n");
-    volatile uint32_t *vbuf32 = ptr;
+    volatile uint32_t *vbuf32 = reinterpret_cast<uint32_t*>(ptr);
     for (i = 0; i < len / 4; i++) {
         vbuf32[i] = i;
     }

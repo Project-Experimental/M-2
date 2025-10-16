@@ -22,7 +22,7 @@ const size_t BUFSIZE = (1024*1024);
 const uint ITER = 1024;
 
 __NO_INLINE static void bench_set_overhead(void) {
-    uint32_t *buf = malloc(BUFSIZE);
+    uint32_t *buf = reinterpret_cast<uint32_t*>(malloc(BUFSIZE));
     if (!buf) {
         printf("failed to allocate buffer\n");
         return;
@@ -63,7 +63,7 @@ __NO_INLINE static void bench_memset(void) {
 #define bench_cset(type) \
 __NO_INLINE static void bench_cset_##type(void) \
 { \
-    type *buf = malloc(BUFSIZE); \
+    type *buf = reinterpret_cast<type*>(malloc(BUFSIZE)); \
     if (!buf) { \
         printf("failed to allocate buffer\n"); \
         return; \
@@ -91,7 +91,7 @@ bench_cset(uint32_t)
 bench_cset(uint64_t)
 
 __NO_INLINE static void bench_cset_wide(void) {
-    uint32_t *buf = malloc(BUFSIZE);
+    uint32_t *buf = reinterpret_cast<uint32_t*>(malloc(BUFSIZE));
     if (!buf) {
         printf("failed to allocate buffer\n");
         return;
@@ -121,7 +121,7 @@ __NO_INLINE static void bench_cset_wide(void) {
 }
 
 __NO_INLINE static void bench_memcpy(void) {
-    uint8_t *buf = malloc(BUFSIZE);
+    uint8_t *buf = reinterpret_cast<uint8_t*>(malloc(BUFSIZE));
     if (!buf) {
         printf("failed to allocate buffer\n");
         return;

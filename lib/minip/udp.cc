@@ -49,7 +49,7 @@ int udp_listen(uint16_t port, udp_callback_t cb, void *arg) {
 
     list_for_every_entry_safe(&udp_list, entry, temp, struct udp_listener, list) {
         if (entry->port == port) {
-            if (cb == NULL) {
+            if (cb == nullptr) {
                 list_delete(&entry->list);
                 return 0;
             }
@@ -57,7 +57,8 @@ int udp_listen(uint16_t port, udp_callback_t cb, void *arg) {
         }
     }
 
-    if ((entry = malloc(sizeof(struct udp_listener))) == NULL) {
+    entry = reinterpret_cast<udp_listener*>(malloc(sizeof(struct udp_listener)));
+    if (entry == nullptr) {
         return -1;
     }
 
@@ -76,7 +77,7 @@ status_t udp_open(uint32_t host, uint16_t sport, uint16_t dport, udp_socket_t **
     udp_socket_t *socket;
     const uint8_t *dst_mac;
 
-    if (handle == NULL) {
+    if (handle == nullptr) {
         return -EINVAL;
     }
 
@@ -86,7 +87,7 @@ status_t udp_open(uint32_t host, uint16_t sport, uint16_t dport, udp_socket_t **
     }
 
     dst_mac = arp_get_dest_mac(host);
-    if (dst_mac == NULL) {
+    if (dst_mac == nullptr) {
         free(socket);
         return -EHOSTUNREACH;
     }
@@ -102,7 +103,7 @@ status_t udp_open(uint32_t host, uint16_t sport, uint16_t dport, udp_socket_t **
 }
 
 status_t udp_close(udp_socket_t *handle) {
-    if (handle == NULL) {
+    if (handle == nullptr) {
         return -EINVAL;
     }
 
@@ -119,22 +120,22 @@ status_t udp_send_iovec(const iovec_t *iov, uint iov_count, udp_socket_t *handle
     void *buf;
     ssize_t len;
 
-    if (handle == NULL || iov == NULL || iov_count == 0) {
+    if (handle == nullptr || iov == nullptr || iov_count == 0) {
         return -EINVAL;
     }
 
-    if ((p = pktbuf_alloc()) == NULL) {
+    if ((p = pktbuf_alloc()) == nullptr) {
         return -ENOMEM;
     }
 
     len = iovec_size(iov, iov_count);
 
     buf = pktbuf_append(p, len);
-    udp = pktbuf_prepend(p, sizeof(udp_hdr_t));
-    ip = pktbuf_prepend(p, sizeof(struct ipv4_hdr));
-    eth = pktbuf_prepend(p, sizeof(struct eth_hdr));
+    udp = reinterpret_cast<udp_hdr_t*>(pktbuf_prepend(p, sizeof(udp_hdr_t)));
+    ip = reinterpret_cast<ipv4_hdr*>(pktbuf_prepend(p, sizeof(struct ipv4_hdr)));
+    eth = reinterpret_cast<eth_hdr*>(pktbuf_prepend(p, sizeof(struct eth_hdr)));
 
-    iovec_to_membuf(buf, len, iov, iov_count, 0);
+    iovec_to_membuf(reinterpret_cast<uint8_t*>(buf), len, iov, iov_count, 0);
 
     udp->src_port   = htons(handle->sport);
     udp->dst_port   = htons(handle->dport);
@@ -160,7 +161,7 @@ status_t udp_send(void *buf, size_t len, udp_socket_t *handle) {
 
     LTRACEF("buf %p, len %zu, handle %p\n", buf, len, handle);
 
-    if (buf == NULL || len == 0) {
+    if (buf == nullptr || len == 0) {
         return -EINVAL;
     }
 
@@ -174,8 +175,9 @@ void udp_input(pktbuf_t *p, uint32_t src_ip) {
     udp_hdr_t *udp;
     struct udp_listener *e;
     uint16_t port;
-
-    if ((udp = pktbuf_consume(p, sizeof(udp_hdr_t))) == NULL) {
+    
+    udp = reinterpret_cast<udp_hdr_t*>(pktbuf_consume(p, sizeof(udp_hdr_t)));
+    if (udp == nullptr) {
         return;
     }
 

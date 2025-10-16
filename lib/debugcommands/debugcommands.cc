@@ -80,7 +80,7 @@ STATIC_COMMAND_END(mem);
  */
 static int check_address_mapped(unsigned long start, unsigned long *stop) {
     unsigned long page_curr;
-    if (stop == NULL) {
+    if (stop == nullptr) {
       return -1;
     }
     page_curr = ROUNDDOWN(start, PAGE_SIZE);
@@ -437,7 +437,7 @@ static int cmd_crash(int argc, const console_cmd_args *argv) {
     asm("bx %0":: "r"(0));
 #else
     /* should crash */
-    volatile uint32_t *ptr = (void *)1;
+    volatile uint32_t *ptr = reinterpret_cast<uint32_t*>(1);
     *ptr = 1;
 #endif
 

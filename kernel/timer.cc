@@ -97,7 +97,7 @@ static void timer_set(timer_t *timer, lk_time_t delay, lk_time_t period, timer_c
     if (list_peek_head_type(&timers[cpu].timer_queue, timer_t, node) == timer) {
         /* we just modified the head of the timer queue */
         LTRACEF("setting new timer for %u msecs\n", delay);
-        platform_set_oneshot_timer(timer_tick, NULL, delay);
+        platform_set_oneshot_timer(timer_tick, nullptr, delay);
     }
 #endif
 
@@ -166,13 +166,13 @@ void timer_cancel(timer_t *timer) {
      * periodic timer callback.
      */
     timer->periodic_time = 0;
-    timer->callback = NULL;
-    timer->arg = NULL;
+    timer->callback = nullptr;
+    timer->arg = nullptr;
 
 #if PLATFORM_HAS_DYNAMIC_TIMER
     /* see if we've just modified the head of the timer queue */
     timer_t *newhead = list_peek_head_type(&timers[cpu].timer_queue, timer_t, node);
-    if (newhead == NULL) {
+    if (newhead == nullptr) {
         LTRACEF("clearing old hw timer, nothing in the queue\n");
         platform_stop_timer();
     } else if (newhead != oldhead) {
@@ -185,7 +185,7 @@ void timer_cancel(timer_t *timer) {
             delay = newhead->scheduled_time - now;
 
         LTRACEF("setting new timer to %u\n", (uint) delay);
-        platform_set_oneshot_timer(timer_tick, NULL, delay);
+        platform_set_oneshot_timer(timer_tick, nullptr, delay);
     }
 #endif
 
@@ -262,7 +262,7 @@ static enum handler_return timer_tick(void *arg, lk_time_t now) {
         lk_time_t delay = timer->scheduled_time - now;
 
         LTRACEF("setting new timer for %u msecs for event %p\n", (uint)delay, timer);
-        platform_set_oneshot_timer(timer_tick, NULL, delay);
+        platform_set_oneshot_timer(timer_tick, nullptr, delay);
     }
 
     /* we're done manipulating the timer queue */
@@ -273,7 +273,7 @@ static enum handler_return timer_tick(void *arg, lk_time_t now) {
 
     /* let the scheduler have a shot to do quantum expiration, etc */
     /* in case of dynamic timer, the scheduler will set up a periodic timer */
-    if (thread_timer_tick(NULL, now, NULL) == INT_RESCHEDULE)
+    if (thread_timer_tick(nullptr, now, nullptr) == INT_RESCHEDULE)
         ret = INT_RESCHEDULE;
 #endif
 
@@ -287,6 +287,6 @@ void timer_init(void) {
     }
 #if !PLATFORM_HAS_DYNAMIC_TIMER
     /* register for a periodic timer tick */
-    platform_set_periodic_timer(timer_tick, NULL, 10); /* 10ms */
+    platform_set_periodic_timer(timer_tick, nullptr, 10); /* 10ms */
 #endif
 }

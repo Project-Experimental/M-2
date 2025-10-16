@@ -17,6 +17,8 @@
 /* to bring in definition of arch_aspace */
 #include <arch/aspace.h>
 
+#include <arch/interface/IMmu.h>
+
 __BEGIN_CDECLS
 
 /* flags to pass to the arch_mmu_map and arch_mmu_query routines */
@@ -32,34 +34,82 @@ __BEGIN_CDECLS
 #define ARCH_MMU_FLAG_INVALID           (1U<<6) /* indicates that flags are not specified */
 
 /* arch level query of some features at the mapping/query level */
-bool arch_mmu_supports_nx_mappings(void);
-bool arch_mmu_supports_ns_mappings(void);
-bool arch_mmu_supports_user_aspaces(void);
+// bool arch_mmu_supports_nx_mappings(void);
+// bool arch_mmu_supports_ns_mappings(void);
+// bool arch_mmu_supports_user_aspaces(void);
 
 /* forward declare the per-address space arch-specific context object */
 typedef struct arch_aspace arch_aspace_t;
 
 #define ARCH_ASPACE_FLAG_KERNEL         (1U<<0)
 
-/* initialize per address space */
-status_t arch_mmu_init_aspace(arch_aspace_t *aspace, vaddr_t base, size_t size, uint flags) __NONNULL((1));
-status_t arch_mmu_destroy_aspace(arch_aspace_t *aspace) __NONNULL((1));
+// /* initialize per address space */
+// status_t arch_mmu_init_aspace(arch_aspace_t *aspace, vaddr_t base, size_t size, uint flags) __NONNULL((1));
+// status_t arch_mmu_destroy_aspace(arch_aspace_t *aspace) __NONNULL((1));
 
-/* routines to map/unmap/query mappings per address space */
-int arch_mmu_map(arch_aspace_t *aspace, vaddr_t vaddr, paddr_t paddr, uint count, uint flags) __NONNULL((1));
-int arch_mmu_unmap(arch_aspace_t *aspace, vaddr_t vaddr, uint count) __NONNULL((1));
-status_t arch_mmu_query(arch_aspace_t *aspace, vaddr_t vaddr, paddr_t *paddr, uint *flags) __NONNULL((1));
+// /* routines to map/unmap/query mappings per address space */
+// int arch_mmu_map(arch_aspace_t *aspace, vaddr_t vaddr, paddr_t paddr, uint count, uint flags) __NONNULL((1));
+// int arch_mmu_unmap(arch_aspace_t *aspace, vaddr_t vaddr, uint count) __NONNULL((1));
+// status_t arch_mmu_query(arch_aspace_t *aspace, vaddr_t vaddr, paddr_t *paddr, uint *flags) __NONNULL((1));
 
-vaddr_t arch_mmu_pick_spot(arch_aspace_t *aspace,
-                           vaddr_t base, uint prev_region_arch_mmu_flags,
-                           vaddr_t end,  uint next_region_arch_mmu_flags,
-                           vaddr_t align, size_t size, uint arch_mmu_flags) __NONNULL((1));
+// vaddr_t arch_mmu_pick_spot(arch_aspace_t *aspace,
+//                            vaddr_t base, uint prev_region_arch_mmu_flags,
+//                            vaddr_t end,  uint next_region_arch_mmu_flags,
+//                            vaddr_t align, size_t size, uint arch_mmu_flags) __NONNULL((1));
 
 /*
  * load a new user address space context.
  * aspace argument NULL should unload user space.
  */
 void arch_mmu_context_switch(arch_aspace_t *aspace);
+
+namespace kernel::arch
+{
+
+class Mmu : public IMmu
+{
+    arch_aspace_t* aspace;
+public:
+    Mmu(arch_aspace_t* aspace = nullptr) : aspace(aspace)
+    { } 
+
+    static bool IsSupportsNXMappings(void);
+    static bool IsSupportsNSMappings(void);
+    static bool IsSupportsUserASpaces(void);
+
+    status_t Init(
+        vaddr_t base,
+        size_t size,
+        uint flags
+    ) override;
+
+    status_t Destroy(void) override;
+
+    int Map(
+        vaddr_t vaddr, 
+        paddr_t paddr, 
+        uint count,
+        uint flags
+    ) override;
+
+    int UnMap(
+        vaddr_t vaddr,
+        uint count
+    ) override;
+
+    status_t Query(
+        vaddr_t vaddr,
+        paddr_t& paddr,
+        uint& flags
+    ) override;
+
+    void ContextSwitch(arch_aspace_t* new_space) override;
+
+    arch_aspace_t* GetASpace(void);
+    void SetASpace(arch_aspace_t* new_aspace);
+};
+
+};
 
 __END_CDECLS
 

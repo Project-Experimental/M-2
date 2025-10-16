@@ -143,7 +143,7 @@ static void init_thread_struct(thread_t *t, const char *name) {
  *
  * Stack size is typically set to DEFAULT_STACK_SIZE
  *
- * @return  Pointer to thread object, or NULL on failure.
+ * @return  Pointer to thread object, or nullptr on failure.
  */
 thread_t *thread_create_etc(thread_t *t, const char *name, thread_start_routine entry, void *arg, int priority, void *stack, size_t stack_size) {
     unsigned int flags = 0;
@@ -151,7 +151,7 @@ thread_t *thread_create_etc(thread_t *t, const char *name, thread_start_routine 
     if (!t) {
         t = new thread_t;
         if (!t)
-            return NULL;
+            return nullptr;
         flags |= THREAD_FLAG_FREE_STRUCT;
     }
 
@@ -161,7 +161,7 @@ thread_t *thread_create_etc(thread_t *t, const char *name, thread_start_routine 
     t->arg = arg;
     t->priority = priority;
     t->state = THREAD_SUSPENDED;
-    t->blocking_wait_queue = NULL;
+    t->blocking_wait_queue = nullptr;
     t->wait_queue_block_ret = NO_ERROR;
     thread_set_curr_cpu(t, -1);
 
@@ -169,7 +169,7 @@ thread_t *thread_create_etc(thread_t *t, const char *name, thread_start_routine 
     wait_queue_init(&t->retcode_wait_queue);
 
 #if WITH_KERNEL_VM
-    t->aspace = NULL;
+    t->aspace = nullptr;
 #endif
 
     /* create the stack */
@@ -182,7 +182,7 @@ thread_t *thread_create_etc(thread_t *t, const char *name, thread_start_routine 
         if (!t->stack) {
             if (flags & THREAD_FLAG_FREE_STRUCT)
                 delete t;
-            return NULL;
+            return nullptr;
         }
         flags |= THREAD_FLAG_FREE_STACK;
 #if THREAD_STACK_BOUNDS_CHECK
@@ -225,7 +225,7 @@ thread_t *thread_create_etc(thread_t *t, const char *name, thread_start_routine 
 }
 
 thread_t *thread_create(const char *name, thread_start_routine entry, void *arg, int priority, size_t stack_size) {
-    return thread_create_etc(NULL, name, entry, arg, priority, NULL, stack_size);
+    return thread_create_etc(nullptr, name, entry, arg, priority, nullptr, stack_size);
 }
 
 /**
@@ -330,7 +330,7 @@ status_t thread_join(thread_t *t, int *retcode, lk_time_t timeout) {
 
     DEBUG_ASSERT(t->magic == THREAD_MAGIC);
     DEBUG_ASSERT(t->state == THREAD_DEATH);
-    DEBUG_ASSERT(t->blocking_wait_queue == NULL);
+    DEBUG_ASSERT(t->blocking_wait_queue == nullptr);
     DEBUG_ASSERT(!list_in_list(&t->queue_node));
 
     /* save the return code */
@@ -368,7 +368,7 @@ status_t thread_detach(thread_t *t) {
     if (t->state == THREAD_DEATH) {
         t->flags &= ~THREAD_FLAG_DETACHED; /* makes sure thread_join continues */
         THREAD_UNLOCK(state);
-        return thread_join(t, NULL, 0);
+        return thread_join(t, nullptr, 0);
     } else {
         t->flags |= THREAD_FLAG_DETACHED;
         THREAD_UNLOCK(state);
@@ -554,7 +554,7 @@ void thread_resched(void) {
         dprintf(ALWAYS, "arch_context_switch: start preempt, cpu %d, old %p (%s), new %p (%s)\n",
                 cpu, oldthread, oldthread->name, newthread, newthread->name);
 #endif
-        timer_set_periodic(&preempt_timer[cpu], 10, thread_timer_tick, NULL);
+        timer_set_periodic(&preempt_timer[cpu], 10, thread_timer_tick, nullptr);
     }
 #endif
 
@@ -1156,7 +1156,7 @@ int wait_queue_wake_one(wait_queue_t *wait, bool reschedule, status_t wait_queue
         DEBUG_ASSERT(t->state == THREAD_BLOCKED);
         t->state = THREAD_READY;
         t->wait_queue_block_ret = wait_queue_error;
-        t->blocking_wait_queue = NULL;
+        t->blocking_wait_queue = nullptr;
 
         /* if we're instructed to reschedule, stick the current thread on the head
          * of the run queue first, so that the newly awakened thread gets a chance to run
@@ -1219,7 +1219,7 @@ int wait_queue_wake_all(wait_queue_t *wait, bool reschedule, status_t wait_queue
         DEBUG_ASSERT(t->state == THREAD_BLOCKED);
         t->state = THREAD_READY;
         t->wait_queue_block_ret = wait_queue_error;
-        t->blocking_wait_queue = NULL;
+        t->blocking_wait_queue = nullptr;
         int pinned_cpu = thread_pinned_cpu(t);
         if (pinned_cpu < 0) {
             /* assumes MP_CPU_ALL_BUT_LOCAL is defined as all bits on */
@@ -1277,13 +1277,13 @@ status_t thread_unblock_from_wait_queue(thread_t *t, status_t wait_queue_error) 
     if (t->state != THREAD_BLOCKED)
         return ERR_NOT_BLOCKED;
 
-    DEBUG_ASSERT(t->blocking_wait_queue != NULL);
+    DEBUG_ASSERT(t->blocking_wait_queue != nullptr);
     DEBUG_ASSERT(t->blocking_wait_queue->magic == WAIT_QUEUE_MAGIC);
     DEBUG_ASSERT(list_in_list(&t->queue_node));
 
     list_delete(&t->queue_node);
     t->blocking_wait_queue->count--;
-    t->blocking_wait_queue = NULL;
+    t->blocking_wait_queue = nullptr;
     t->state = THREAD_READY;
     t->wait_queue_block_ret = wait_queue_error;
     insert_in_run_queue_head(t);

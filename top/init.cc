@@ -34,12 +34,12 @@ void lk_init_level(enum lk_init_flags required_flag, uint16_t start_level, uint1
 
     ASSERT(start_level > 0);
     uint16_t last_called_level = start_level - 1;
-    const struct lk_init_struct *last = NULL;
+    const struct lk_init_struct *last = nullptr;
     for (;;) {
         /* search for the lowest uncalled hook to call */
         LTRACEF("last %p, last_called_level %#x\n", last, last_called_level);
 
-        const struct lk_init_struct *found = NULL;
+        const struct lk_init_struct *found = nullptr;
         bool seen_last = false;
         for (const struct lk_init_struct *ptr = &__start_lk_init; ptr != &__stop_lk_init; ptr++) {
             LTRACEF("looking at %p (%s) level %#x, flags %#x, seen_last %d\n", ptr, ptr->name, ptr->level, ptr->flags, seen_last);

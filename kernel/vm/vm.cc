@@ -41,7 +41,7 @@ static void mark_pages_in_use(vaddr_t va, size_t len) {
         uint flags;
         paddr_t pa;
 
-        status_t err = arch_mmu_query(&vmm_get_kernel_aspace()->arch_aspace, va + offset, &pa, &flags);
+        status_t err = kernel::arch::Mmu(&vmm_get_kernel_aspace()->arch_aspace).Query(va + offset, pa, flags);
         if (err >= 0) {
             //LTRACEF("va 0x%x, pa 0x%x, flags 0x%x, err %d\n", va + offset, pa, flags, err);
 
@@ -106,18 +106,19 @@ void *paddr_to_kvaddr(paddr_t pa) {
         }
         map++;
     }
-    return NULL;
+    return nullptr;
 }
 
 paddr_t vaddr_to_paddr(void *ptr) {
     vmm_aspace_t *aspace = vaddr_to_aspace(ptr);
     if (!aspace)
-        return (paddr_t)NULL;
+        return (paddr_t)nullptr;
 
     paddr_t pa;
-    status_t rc = arch_mmu_query(&aspace->arch_aspace, (vaddr_t)ptr, &pa, NULL);
+    uint tmp;
+    status_t rc = kernel::arch::Mmu(&aspace->arch_aspace).Query(reinterpret_cast<vaddr_t>(ptr), pa, tmp);
     if (rc)
-        return (paddr_t)NULL;
+        return (paddr_t)nullptr;
 
     return pa;
 }
@@ -128,7 +129,7 @@ vmm_aspace_t *vaddr_to_aspace(void *ptr) {
     } else if (is_user_address((vaddr_t)ptr)) {
         return get_current_thread()->aspace;
     } else {
-        return NULL;
+        return nullptr;
     }
 }
 
@@ -161,7 +162,7 @@ usage:
 
         paddr_t pa;
         uint flags;
-        status_t err = arch_mmu_query(&aspace->arch_aspace, argv[2].u, &pa, &flags);
+        status_t err = kernel::arch::Mmu(&aspace->arch_aspace).Query(argv[2].u, pa, flags);
         printf("arch_mmu_query returns %d\n", err);
         if (err >= 0) {
             printf("\tpa 0x%lx, flags 0x%x\n", pa, flags);
@@ -175,7 +176,7 @@ usage:
             return -1;
         }
 
-        int err = arch_mmu_map(&aspace->arch_aspace, argv[3].u, argv[2].u, argv[4].u, argv[5].u);
+        int err = kernel::arch::Mmu(&aspace->arch_aspace).Map(argv[3].u, argv[2].u, argv[4].u, argv[5].u);
         printf("arch_mmu_map returns %d\n", err);
     } else if (!strcmp(argv[1].str, "unmap")) {
         if (argc < 4) goto notenoughargs;
@@ -186,7 +187,7 @@ usage:
             return -1;
         }
 
-        int err = arch_mmu_unmap(&aspace->arch_aspace, argv[2].u, argv[3].u);
+        int err = kernel::arch::Mmu(&aspace->arch_aspace).UnMap(argv[2].u, argv[3].u);
         printf("arch_mmu_unmap returns %d\n", err);
     } else {
         printf("unknown command\n");

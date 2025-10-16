@@ -37,7 +37,7 @@ static int fibo_thread(void *argv) {
     if (!t[1]) {
         printf("error creating thread for fibo %ld\n", fibo-2);
         thread_resume(t[0]);
-        thread_join(t[0], NULL, INFINITE_TIME);
+        thread_join(t[0], nullptr, INFINITE_TIME);
         return 0;
     }
 

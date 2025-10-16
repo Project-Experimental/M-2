@@ -10,8 +10,6 @@
 
 #include <arch/defines.h>
 
-#include <interface/mmu/Ix86mmu.h>
-
 /* top level defines for the x86 mmu */
 /* NOTE: the top part can be included from assembly */
 #define KB (1024UL)
@@ -116,6 +114,18 @@ typedef uint32_t map_addr_t;
 typedef uint32_t arch_flags_t;
 #endif
 
+// void x86_mmu_early_init(void);
+// void x86_mmu_init(void);
+// void x86_mmu_early_init_percpu(void);
+
+__END_CDECLS
+
+#ifdef __cplusplus
+
+#include <sys/types.h>
+
+#include "interface/mmu/Ix86mmu.h"
+
 namespace kernel::arch
 {
 
@@ -125,14 +135,45 @@ public:
     void Init(void) override;
     void InitEarly(void) override;
     void InitEarlyPerCpu(void) override;
-}
+
+    status_t MapRange(
+        uint64_t* pml4,
+        struct map_range* range,
+        arch_flags_t flags
+    );
+
+    status_t UnMap(
+        uint64_t* pml4,
+        const vaddr_t vaddr,
+        uint count
+    );
+
+    void UnMapEntry(
+        const vaddr_t vaddr,
+        const int level,
+        uint64_t* table
+    );
+
+    status_t GetMapping(
+        uint64_t* pml4_table,
+        const vaddr_t vaddr,
+        uint32_t& ret_level,
+        arch_flags_t& mmu_flags,
+        paddr_t& paddr
+    );
+
+    status_t AddMapping(
+        uint64_t* pml4,
+        const map_addr_t paddr,
+        const vaddr_t vaddr,
+        const arch_flags_t mmu_flags
+    );
 
 };
 
-void x86_mmu_early_init(void);
-void x86_mmu_init(void);
-void x86_mmu_early_init_percpu(void);
+X86mmu& GetX86MMU(void);
 
-__END_CDECLS
+};
+#endif
 
 #endif // !ASSEMBLY

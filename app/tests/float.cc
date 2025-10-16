@@ -34,7 +34,7 @@ extern void float_neon_thumb_instruction_test(void);
 /* optimize this function to cause it to try to use a lot of registers */
 __OPTIMIZE("O3")
 static int float_thread(void *arg) {
-    FLOAT *val = arg;
+    FLOAT *val = reinterpret_cast<FLOAT*>(arg);
 
     FLOAT a[16];
 

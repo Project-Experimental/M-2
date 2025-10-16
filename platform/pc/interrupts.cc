@@ -241,7 +241,7 @@ void platform_init_interrupts_postvm(void) {
 
 #if WITH_LIB_ACPI_LITE
     // Now that we've scanned ACPI, try to initialize the ioapic(s)
-    acpi_process_madt_entries_etc(ACPI_MADT_TYPE_IO_APIC, &io_apic_callback, NULL);
+    acpi_process_madt_entries_etc(ACPI_MADT_TYPE_IO_APIC, &io_apic_callback, nullptr);
 #endif
 }
 

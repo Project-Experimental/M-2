@@ -20,16 +20,18 @@ namespace {
 bool create_user_aspace() {
     BEGIN_TEST;
 
-    if (arch_mmu_supports_user_aspaces()) {
+    if (kernel::arch::Mmu::IsSupportsUserASpaces()) {
         arch_aspace_t as;
-        status_t err = arch_mmu_init_aspace(&as, USER_ASPACE_BASE, USER_ASPACE_SIZE, 0);
+        auto mmu = kernel::arch::Mmu(&as);
+        status_t err = mmu.Init(USER_ASPACE_BASE, USER_ASPACE_SIZE, 0);
         ASSERT_EQ(NO_ERROR, err, "init aspace");
 
-        err = arch_mmu_destroy_aspace(&as);
+        err = mmu.Destroy();
         EXPECT_EQ(NO_ERROR, err, "destroy");
     } else {
         arch_aspace_t as;
-        status_t err = arch_mmu_init_aspace(&as, USER_ASPACE_BASE, USER_ASPACE_SIZE, 0);
+        auto mmu = kernel::arch::Mmu(&as);
+        status_t err = mmu.Init(USER_ASPACE_BASE, USER_ASPACE_SIZE, 0);
         ASSERT_EQ(ERR_NOT_SUPPORTED, err, "init aspace");
     }
 
@@ -39,12 +41,13 @@ bool create_user_aspace() {
 bool map_user_pages() {
     BEGIN_TEST;
 
-    if (arch_mmu_supports_user_aspaces()) {
+    if (kernel::arch::Mmu::IsSupportsUserASpaces()) {
         arch_aspace_t as;
-        status_t err = arch_mmu_init_aspace(&as, USER_ASPACE_BASE, USER_ASPACE_SIZE, 0);
+        auto mmu = kernel::arch::Mmu(&as);
+        status_t err = mmu.Init(USER_ASPACE_BASE, USER_ASPACE_SIZE, 0);
         ASSERT_EQ(NO_ERROR, err, "init aspace");
 
-        auto aspace_cleanup = lk::make_auto_call([&]() { arch_mmu_destroy_aspace(&as); });
+        auto aspace_cleanup = lk::make_auto_call([&]() { mmu.Destroy(); });
 
         // allocate a batch of pages
         struct list_node pages = LIST_INITIAL_VALUE(pages);
@@ -58,7 +61,7 @@ bool map_user_pages() {
         vaddr_t va = USER_ASPACE_BASE;
         vm_page_t *p;
         list_for_every_entry(&pages, p, vm_page_t, node) {
-            err = arch_mmu_map(&as, va, vm_page_to_paddr(p), 1, ARCH_MMU_FLAG_PERM_USER);
+            err = mmu.Map(va, vm_page_to_paddr(p), 1, ARCH_MMU_FLAG_PERM_USER);
             EXPECT_LE(NO_ERROR, err, "map page");
             va += PAGE_SIZE;
         }
@@ -68,7 +71,7 @@ bool map_user_pages() {
         list_for_every_entry(&pages, p, vm_page_t, node) {
             paddr_t pa;
             uint flags;
-            err = arch_mmu_query(&as, va, &pa, &flags);
+            err = mmu.Query(va, pa, flags);
             EXPECT_EQ(NO_ERROR, err, "query");
             EXPECT_EQ(vm_page_to_paddr(p), pa, "pa");
             EXPECT_EQ(ARCH_MMU_FLAG_PERM_USER, flags, "flags");
@@ -79,7 +82,7 @@ bool map_user_pages() {
 
         // destroy the aspace with the pages mapped
         aspace_cleanup.cancel();
-        err = arch_mmu_destroy_aspace(&as);
+        err = mmu.Destroy();
         EXPECT_EQ(NO_ERROR, err, "destroy");
 
         // free the pages we allocated before
@@ -103,7 +106,7 @@ bool map_region_query_result(vmm_aspace_t *aspace, uint arch_flags) {
     {
         paddr_t pa = 0;
         uint flags = ~arch_flags;
-        EXPECT_EQ(NO_ERROR, arch_mmu_query(&aspace->arch_aspace, (vaddr_t)ptr, &pa, &flags), "arch_query");
+        EXPECT_EQ(NO_ERROR, kernel::arch::Mmu(&aspace->arch_aspace).Query((vaddr_t)ptr, pa, flags), "arch_query");
         EXPECT_NE(0U, pa, "valid pa");
         EXPECT_EQ(arch_flags, flags, "query flags");
     }
@@ -115,7 +118,7 @@ bool map_region_query_result(vmm_aspace_t *aspace, uint arch_flags) {
     {
         paddr_t pa = 0;
         uint flags = ~arch_flags;
-        EXPECT_EQ(ERR_NOT_FOUND, arch_mmu_query(&aspace->arch_aspace, (vaddr_t)ptr, &pa, &flags), "arch_query");
+        EXPECT_EQ(ERR_NOT_FOUND, kernel::arch::Mmu(&aspace->arch_aspace).Query((vaddr_t)ptr, pa, flags), "arch_query");
     }
 
     END_TEST;
@@ -141,7 +144,7 @@ bool map_query_pages() {
     // try mapping pages in the kernel address space with various permissions and read them back via arch query
     EXPECT_TRUE(map_region_query_result(kaspace, 0), "0");
     EXPECT_TRUE(map_region_query_result(kaspace, ARCH_MMU_FLAG_PERM_RO), "1");
-    if (arch_mmu_supports_nx_mappings()) {
+    if (kernel::arch::Mmu::IsSupportsNXMappings()) {
         EXPECT_TRUE(map_region_query_result(kaspace, ARCH_MMU_FLAG_PERM_NO_EXECUTE), "2");
         EXPECT_TRUE(map_region_query_result(kaspace, ARCH_MMU_FLAG_PERM_RO | ARCH_MMU_FLAG_PERM_NO_EXECUTE), "3");
     } else {
@@ -151,7 +154,7 @@ bool map_query_pages() {
 
     EXPECT_TRUE(map_region_query_result(kaspace, ARCH_MMU_FLAG_PERM_USER), "4");
     EXPECT_TRUE(map_region_query_result(kaspace, ARCH_MMU_FLAG_PERM_USER | ARCH_MMU_FLAG_PERM_RO), "5");
-    if (arch_mmu_supports_nx_mappings()) {
+    if (kernel::arch::Mmu::IsSupportsNXMappings()) {
         EXPECT_TRUE(map_region_query_result(kaspace, ARCH_MMU_FLAG_PERM_USER | ARCH_MMU_FLAG_PERM_NO_EXECUTE), "6");
         EXPECT_TRUE(map_region_query_result(kaspace, ARCH_MMU_FLAG_PERM_USER | ARCH_MMU_FLAG_PERM_RO | ARCH_MMU_FLAG_PERM_NO_EXECUTE), "7");
     } else {
@@ -168,15 +171,16 @@ bool context_switch() {
     // create a user space, map a page or two and access it
     // NOTE: this assumes that kernel code can directly access user space, which isn't necessarily true
     // on all architectures. See SMAP on x86, PAN on ARM, and SUM on RISC-V.
-    if (arch_mmu_supports_user_aspaces()) {
+    if (kernel::arch::Mmu::IsSupportsUserASpaces()) {
         arch_aspace_t as;
-        status_t err = arch_mmu_init_aspace(&as, USER_ASPACE_BASE, USER_ASPACE_SIZE, 0);
+        auto mmu = kernel::arch::Mmu(&as);
+        status_t err = mmu.Init(USER_ASPACE_BASE, USER_ASPACE_SIZE, 0);
         ASSERT_EQ(NO_ERROR, err, "init aspace");
-        auto aspace_cleanup = lk::make_auto_call([&]() { arch_mmu_destroy_aspace(&as); });
+        auto aspace_cleanup = lk::make_auto_call([&]() { mmu.Destroy(); });
 
         // switch to the address space
-        arch_mmu_context_switch(&as);
-        auto cleanup_switch = lk::make_auto_call([&]() { arch_mmu_context_switch(NULL); });
+        mmu.ContextSwitch(&as);
+        auto cleanup_switch = lk::make_auto_call([&]() { mmu.ContextSwitch(NULL); });
 
         // map a page, verify can be read through the page
         vm_page_t *p = pmm_alloc_page();
@@ -184,7 +188,7 @@ bool context_switch() {
         auto page_cleanup = lk::make_auto_call([&]() { pmm_free_page(p); });
 
         // map it
-        err = arch_mmu_map(&as, USER_ASPACE_BASE, vm_page_to_paddr(p), 1, ARCH_MMU_FLAG_PERM_USER);
+        err = mmu.Map(USER_ASPACE_BASE, vm_page_to_paddr(p), 1, ARCH_MMU_FLAG_PERM_USER);
         ASSERT_LE(NO_ERROR, err, "map");
 
         // write a known value to the kvaddr portion of the page
@@ -207,11 +211,11 @@ bool context_switch() {
 
         // switch back to kernel aspace
         cleanup_switch.cancel();
-        arch_mmu_context_switch(NULL);
+        mmu.ContextSwitch(NULL);
 
         // destroy it
         aspace_cleanup.cancel();
-        err = arch_mmu_destroy_aspace(&as);
+        err = mmu.Destroy();
         EXPECT_EQ(NO_ERROR, err, "destroy");
 
         // free the page

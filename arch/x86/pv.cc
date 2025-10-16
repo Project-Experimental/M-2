@@ -68,7 +68,14 @@ status_t pvclock_init(void) {
     }
 
     paddr_t paddr;
-    arch_mmu_query(&vmm_get_kernel_aspace()->arch_aspace, (vaddr_t)clocksource_page, &paddr, NULL);
+    uint tmp = 0;
+    auto status = kernel::arch::Mmu(&vmm_get_kernel_aspace()->arch_aspace).Query(reinterpret_cast<vaddr_t>(clocksource_page), paddr, tmp);
+    if (status)
+    {
+        printf("M2::-> Failed to Query on MMU [%d]\n", status);
+        return status;
+    }
+
     LTRACEF("clocksource page %p, paddr %#" PRIxPTR "\n", clocksource_page, paddr);
 
     write_msr(clocksource_msr_base, paddr);

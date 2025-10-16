@@ -23,7 +23,7 @@ typedef uint8_t *port_t;
 // A Port packet is wide enough to carry two full words of data
 #define PORT_PACKET_LEN (sizeof(void *) * 2)
 typedef struct {
-    char value[PORT_PACKET_LEN];
+    uint8_t value[PORT_PACKET_LEN];
 } port_packet_t;
 
 typedef struct {

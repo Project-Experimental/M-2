@@ -150,7 +150,7 @@ void pit_init(void) {
     timer_current_time = 0;
     ticks_per_ms = INTERNAL_FREQ/1000;
     set_pit_frequency(1000); // ~1ms granularity
-    register_int_handler(INT_PIT, &pit_timer_tick, NULL);
+    register_int_handler(INT_PIT, &pit_timer_tick, nullptr);
     unmask_interrupt(INT_PIT);
 }
 

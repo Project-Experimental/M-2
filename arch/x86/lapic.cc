@@ -128,7 +128,7 @@ void LApic::InitTimerPerCpu(uint level)
     }
 
     // register the timer interrupt vector
-    register_int_handler_msi(LAPIC_INT_TIMER, &lapic_timer_handler, NULL, false);
+    register_int_handler_msi(LAPIC_INT_TIMER, &lapic_timer_handler, nullptr, false);
 }
 
 void LApic::Init(void)
@@ -152,9 +152,9 @@ void LApic::InitPerCpu(uint level)
 
     LTRACEF("lapic svr %#x\n", Read(LAPIC_SVR));
 
-    register_int_handler_msi(LAPIC_INT_SPURIOUS, &lapic_spurious_handler, NULL, false);
-    register_int_handler_msi(LAPIC_INT_GENERIC, &lapic_generic_handler, NULL, false);
-    register_int_handler_msi(LAPIC_INT_RESCHEDULE, &lapic_reschedule_handler, NULL, false);
+    register_int_handler_msi(LAPIC_INT_SPURIOUS, &lapic_spurious_handler, nullptr, false);
+    register_int_handler_msi(LAPIC_INT_GENERIC, &lapic_generic_handler, nullptr, false);
+    register_int_handler_msi(LAPIC_INT_RESCHEDULE, &lapic_reschedule_handler, nullptr, false);
 }
 
 void LApic::InitPostVM(void)
@@ -188,7 +188,7 @@ void LApic::InitPostVM(void)
         status_t err = vmm_alloc_physical(vmm_get_kernel_aspace(), "lapic", PAGE_SIZE, (void **)&lapic_mmio, 0,
                                 apic_base & ~0xfff, /* vmm_flags */ 0, ARCH_MMU_FLAG_UNCACHED_DEVICE);
         ASSERT(err == NO_ERROR);
-        ASSERT(lapic_mmio != NULL);
+        ASSERT(lapic_mmio != nullptr);
     }
 
     // semi-hack: re-read the APIC id of the boot cpu make sure the pecpu struct is correct

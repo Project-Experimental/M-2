@@ -83,7 +83,7 @@ void x86_early_init_percpu(void) {
     /* load the kernel's IDT */
     asm("lidt _idtr");
 
-    x86_mmu_early_init_percpu();
+    kernel::arch::X86mmu().InitEarlyPerCpu();
 #if X86_WITH_FPU
     x86_fpu_early_init_percpu();
 #endif
@@ -94,7 +94,7 @@ void x86_early_init_percpu(void) {
  */
 void arch_early_init(void) {
     x86_feature_early_init();
-    x86_mmu_early_init();
+    kernel::arch::X86mmu().InitEarly();
 #if X86_WITH_FPU
     x86_fpu_early_init();
 #endif
@@ -105,7 +105,7 @@ void arch_early_init(void) {
 /* later initialization pass, once the main kernel is initialized and scheduling has begun */
 void arch_init(void) {
     x86_feature_init();
-    x86_mmu_init();
+    kernel::arch::GetX86MMU().Init();
 
 #if X86_WITH_FPU
     x86_fpu_init();

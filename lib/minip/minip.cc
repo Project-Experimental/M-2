@@ -149,8 +149,8 @@ void minip_start_static(uint32_t ip, uint32_t mask, uint32_t gateway) {
 void minip_set_eth(tx_func_t tx_handler, void *tx_arg, const uint8_t *macaddr) {
     LTRACEF("handler %p, arg %p, macaddr %p\n", tx_handler, tx_arg, macaddr);
 
-    DEBUG_ASSERT(minip_tx_handler == NULL);
-    DEBUG_ASSERT(minip_tx_arg == NULL);
+    DEBUG_ASSERT(minip_tx_handler == nullptr);
+    DEBUG_ASSERT(minip_tx_arg == nullptr);
     // TODO: assert mac address is not already set
 
     // set up the low level driver handler
@@ -191,12 +191,12 @@ static int send_arp_request(uint32_t addr) {
     struct eth_hdr *eth;
     struct arp_pkt *arp;
 
-    if ((p = pktbuf_alloc()) == NULL) {
+    if ((p = pktbuf_alloc()) == nullptr) {
         return -1;
     }
 
-    eth = pktbuf_prepend(p, sizeof(struct eth_hdr));
-    arp = pktbuf_append(p, sizeof(struct arp_pkt));
+    eth = reinterpret_cast<struct eth_hdr*>(pktbuf_prepend(p, sizeof(struct eth_hdr)));
+    arp = reinterpret_cast<struct arp_pkt*>(pktbuf_append(p, sizeof(struct arp_pkt)));
     minip_build_mac_hdr(eth, bcast_mac, ETH_TYPE_ARP);
 
     arp->htype = htons(0x0001);
@@ -218,7 +218,7 @@ static void handle_arp_timeout_cb(void *arg) {
 }
 
 const uint8_t *get_dest_mac(uint32_t host) {
-    uint8_t *dst_mac = NULL;
+    uint8_t *dst_mac = nullptr;
     bool arp_timeout = false;
     net_timer_t arp_timeout_timer;
 
@@ -227,7 +227,7 @@ const uint8_t *get_dest_mac(uint32_t host) {
     }
 
     dst_mac = arp_cache_lookup(host);
-    if (dst_mac == NULL) {
+    if (dst_mac == nullptr) {
         send_arp_request(host);
         memset(&arp_timeout_timer, 0, sizeof(arp_timeout_timer));
         net_timer_set(&arp_timeout_timer, handle_arp_timeout_cb, &arp_timeout, 100);
@@ -247,9 +247,10 @@ status_t minip_ipv4_send(pktbuf_t *p, uint32_t dest_addr, uint8_t proto) {
     status_t ret = 0;
     size_t data_len = p->dlen;
     const uint8_t *dst_mac;
+    uint32_t target_addr = 0;
 
-    struct ipv4_hdr *ip = pktbuf_prepend(p, sizeof(struct ipv4_hdr));
-    struct eth_hdr *eth = pktbuf_prepend(p, sizeof(struct eth_hdr));
+    struct ipv4_hdr *ip = reinterpret_cast<struct ipv4_hdr*>(pktbuf_prepend(p, sizeof(struct ipv4_hdr)));
+    struct eth_hdr *eth = reinterpret_cast<struct eth_hdr*>(pktbuf_prepend(p, sizeof(struct eth_hdr)));
 
     // are we sending a broadcast packet?
     if (dest_addr == IPV4_BCAST || dest_addr == minip_broadcast) {
@@ -258,7 +259,7 @@ status_t minip_ipv4_send(pktbuf_t *p, uint32_t dest_addr, uint8_t proto) {
     }
 
     // is this a local subnet packet or do we need to send to the router?
-    uint32_t target_addr = dest_addr;
+    target_addr = dest_addr;
     if ((dest_addr & minip_netmask) != (minip_ip & minip_netmask)) {
         // need to use the gateway
         if (minip_gateway == IPV4_NONE) {
@@ -300,13 +301,13 @@ static void send_ping_reply(uint32_t ipaddr, struct icmp_pkt *req, size_t reqdat
     struct ipv4_hdr *ip;
     struct icmp_pkt *icmp;
 
-    if ((p = pktbuf_alloc()) == NULL) {
+    if ((p = pktbuf_alloc()) == nullptr) {
         return;
     }
 
-    icmp = pktbuf_prepend(p, sizeof(struct icmp_pkt));
-    ip = pktbuf_prepend(p, sizeof(struct ipv4_hdr));
-    eth = pktbuf_prepend(p, sizeof(struct eth_hdr));
+    icmp = reinterpret_cast<icmp_pkt*>(pktbuf_prepend(p, sizeof(struct icmp_pkt)));
+    ip = reinterpret_cast<ipv4_hdr*>(pktbuf_prepend(p, sizeof(struct ipv4_hdr)));
+    eth = reinterpret_cast<eth_hdr*>(pktbuf_prepend(p, sizeof(struct eth_hdr)));
     pktbuf_append_data(p, req->data, reqdatalen);
 
     len = sizeof(struct icmp_pkt) + reqdatalen;
@@ -324,7 +325,7 @@ static void send_ping_reply(uint32_t ipaddr, struct icmp_pkt *req, size_t reqdat
 }
 
 static void dump_ipv4_addr(uint32_t addr) {
-    const uint8_t *a = (void *)&addr;
+    const uint8_t *a = reinterpret_cast<const uint8_t*>(&addr);
 
     printf("%hhu.%hhu.%hhu.%hhu", a[0], a[1], a[2], a[3]);
 }
@@ -365,7 +366,7 @@ __NO_INLINE static void handle_ipv4_packet(pktbuf_t *p, const uint8_t *src_mac) 
     }
 
     /* compute checksum */
-    if (rfc1701_chksum((void *)ip, header_len) != 0) {
+    if (rfc1701_chksum(reinterpret_cast<uint8_t*>(ip), header_len) != 0) {
         /* bad checksum */
         LTRACEF("REJECT: bad checksum\n");
         return;
@@ -383,7 +384,7 @@ __NO_INLINE static void handle_ipv4_packet(pktbuf_t *p, const uint8_t *src_mac) 
     }
 
     /* remove the header from the front of the packet_buf  */
-    if (pktbuf_consume(p, header_len) == NULL) {
+    if (pktbuf_consume(p, header_len) == nullptr) {
         return;
     }
 
@@ -402,7 +403,8 @@ __NO_INLINE static void handle_ipv4_packet(pktbuf_t *p, const uint8_t *src_mac) 
     switch (ip->proto) {
         case IP_PROTO_ICMP: {
             struct icmp_pkt *icmp;
-            if ((icmp = pktbuf_consume(p, sizeof(struct icmp_pkt))) == NULL) {
+            icmp = reinterpret_cast<icmp_pkt*>(pktbuf_consume(p, sizeof(struct icmp_pkt)));
+            if (icmp == nullptr) {
                 break;
             }
             if (icmp->type == ICMP_ECHO_REQUEST) {
@@ -425,9 +427,10 @@ __NO_INLINE static int handle_arp_pkt(pktbuf_t *p) {
     struct eth_hdr *eth;
     struct arp_pkt *arp;
 
-    eth = (void *) (p->data - sizeof(struct eth_hdr));
+    eth = reinterpret_cast<eth_hdr*>((p->data - sizeof(struct eth_hdr)));
 
-    if ((arp = pktbuf_consume(p, sizeof(struct arp_pkt))) == NULL) {
+    arp = reinterpret_cast<arp_pkt*>(pktbuf_consume(p, sizeof(struct arp_pkt)));
+    if (arp == nullptr) {
         return -1;
     }
 
@@ -438,12 +441,12 @@ __NO_INLINE static int handle_arp_pkt(pktbuf_t *p) {
             struct arp_pkt *rarp;
 
             if (memcmp(&arp->tpa, &minip_ip, sizeof(minip_ip)) == 0) {
-                if ((rp = pktbuf_alloc()) == NULL) {
+                if ((rp = pktbuf_alloc()) == nullptr) {
                     break;
                 }
 
-                reth = pktbuf_prepend(rp, sizeof(struct eth_hdr));
-                rarp = pktbuf_append(rp, sizeof(struct arp_pkt));
+                reth = reinterpret_cast<eth_hdr*>(pktbuf_prepend(rp, sizeof(struct eth_hdr)));
+                rarp = reinterpret_cast<arp_pkt*>(pktbuf_append(rp, sizeof(struct arp_pkt)));
 
                 // Eth header
                 minip_build_mac_hdr(reth, eth->src_mac, ETH_TYPE_ARP);
@@ -486,7 +489,8 @@ static void dump_eth_packet(const struct eth_hdr *eth) {
 void minip_rx_driver_callback(pktbuf_t *p) {
     struct eth_hdr *eth;
 
-    if ((eth = (void *) pktbuf_consume(p, sizeof(struct eth_hdr))) == NULL) {
+    eth = reinterpret_cast<eth_hdr*>(pktbuf_consume(p, sizeof(struct eth_hdr)));
+    if (eth == nullptr) {
         return;
     }
 

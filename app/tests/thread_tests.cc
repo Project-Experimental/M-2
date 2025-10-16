@@ -31,7 +31,7 @@ static int sleep_thread(void *arg) {
 static int sleep_test(void) {
     int i;
     for (i=0; i < 16; i++)
-        thread_detach_and_resume(thread_create("sleeper", &sleep_thread, NULL, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE));
+        thread_detach_and_resume(thread_create("sleeper", &sleep_thread, nullptr, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE));
     return 0;
 }
 
@@ -86,7 +86,7 @@ static int semaphore_test(void) {
     while (1) {
         mutex_acquire(&sem_test_mutex);
         if (sem_remaining_its) {
-            thread_detach_and_resume(thread_create("semaphore consumer", &semaphore_consumer, NULL, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE));
+            thread_detach_and_resume(thread_create("semaphore consumer", &semaphore_consumer, nullptr, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE));
             atomic_add(&sem_threads, 1);
         } else {
             mutex_release(&sem_test_mutex);
@@ -95,7 +95,7 @@ static int semaphore_test(void) {
         mutex_release(&sem_test_mutex);
     }
 
-    thread_detach_and_resume(thread_create("semaphore producer", &semaphore_producer, NULL, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE));
+    thread_detach_and_resume(thread_create("semaphore producer", &semaphore_producer, nullptr, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE));
 
     while (sem_threads)
         thread_yield();
@@ -182,7 +182,7 @@ static int mutex_test(void) {
     }
 
     for (uint i=0; i < countof(threads); i++) {
-        thread_join(threads[i], NULL, INFINITE_TIME);
+        thread_join(threads[i], nullptr, INFINITE_TIME);
     }
 
     printf("done with simple mutex tests\n");
@@ -208,7 +208,7 @@ static int mutex_test(void) {
     mutex_release(&timeout_mutex);
 
     for (uint i=0; i < 4; i++) {
-        thread_join(threads[i], NULL, INFINITE_TIME);
+        thread_join(threads[i], nullptr, INFINITE_TIME);
     }
 
     printf("done with mutex tests\n");
@@ -264,7 +264,7 @@ static void event_test(void) {
 
     /* make sure signaling the event wakes up all the threads */
     event_init(&e, false, 0);
-    threads[0] = thread_create("event signaler", &event_signaler, NULL, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE);
+    threads[0] = thread_create("event signaler", &event_signaler, nullptr, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE);
     threads[1] = thread_create("event waiter 0", &event_waiter, (void *)2, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE);
     threads[2] = thread_create("event waiter 1", &event_waiter, (void *)2, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE);
     threads[3] = thread_create("event waiter 2", &event_waiter, (void *)2, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE);
@@ -278,11 +278,11 @@ static void event_test(void) {
     event_destroy(&e);
 
     for (uint i = 0; i < countof(threads); i++)
-        thread_join(threads[i], NULL, INFINITE_TIME);
+        thread_join(threads[i], nullptr, INFINITE_TIME);
 
     /* make sure signaling the event wakes up precisely one thread */
     event_init(&e, false, EVENT_FLAG_AUTOUNSIGNAL);
-    threads[0] = thread_create("event signaler", &event_signaler, NULL, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE);
+    threads[0] = thread_create("event signaler", &event_signaler, nullptr, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE);
     threads[1] = thread_create("event waiter 0", &event_waiter, (void *)99, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE);
     threads[2] = thread_create("event waiter 1", &event_waiter, (void *)99, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE);
     threads[3] = thread_create("event waiter 2", &event_waiter, (void *)99, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE);
@@ -295,7 +295,7 @@ static void event_test(void) {
     event_destroy(&e);
 
     for (uint i = 0; i < countof(threads); i++)
-        thread_join(threads[i], NULL, INFINITE_TIME);
+        thread_join(threads[i], nullptr, INFINITE_TIME);
 
     printf("event tests done\n");
 }
@@ -308,10 +308,10 @@ static int quantum_tester(void *arg) {
 }
 
 static void quantum_test(void) {
-    thread_detach_and_resume(thread_create("quantum tester 0", &quantum_tester, NULL, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE));
-    thread_detach_and_resume(thread_create("quantum tester 1", &quantum_tester, NULL, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE));
-    thread_detach_and_resume(thread_create("quantum tester 2", &quantum_tester, NULL, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE));
-    thread_detach_and_resume(thread_create("quantum tester 3", &quantum_tester, NULL, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE));
+    thread_detach_and_resume(thread_create("quantum tester 0", &quantum_tester, nullptr, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE));
+    thread_detach_and_resume(thread_create("quantum tester 1", &quantum_tester, nullptr, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE));
+    thread_detach_and_resume(thread_create("quantum tester 2", &quantum_tester, nullptr, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE));
+    thread_detach_and_resume(thread_create("quantum tester 3", &quantum_tester, nullptr, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE));
 }
 
 static event_t context_switch_event;
@@ -413,7 +413,7 @@ static void atomic_test(void) {
 
     /* wait for them to all stop */
     for (uint i = 0; i < countof(threads); i++) {
-        thread_join(threads[i], NULL, INFINITE_TIME);
+        thread_join(threads[i], nullptr, INFINITE_TIME);
     }
 
     printf("atomic count == %d (should be zero)\n", atomic);
@@ -441,7 +441,7 @@ static void preempt_test(void) {
     preempt_count = 5;
 
     for (int i = 0; i < preempt_count; i++)
-        thread_detach_and_resume(thread_create("preempt tester", &preempt_tester, NULL, LOW_PRIORITY, DEFAULT_STACK_SIZE));
+        thread_detach_and_resume(thread_create("preempt tester", &preempt_tester, nullptr, LOW_PRIORITY, DEFAULT_STACK_SIZE));
 
     while (preempt_count > 0) {
         thread_sleep(1000);
@@ -457,7 +457,7 @@ static void preempt_test(void) {
     preempt_count = 5;
 
     for (int i = 0; i < preempt_count; i++) {
-        thread_t *t = thread_create("preempt tester", &preempt_tester, NULL, LOW_PRIORITY, DEFAULT_STACK_SIZE);
+        thread_t *t = thread_create("preempt tester", &preempt_tester, nullptr, LOW_PRIORITY, DEFAULT_STACK_SIZE);
         thread_set_real_time(t);
         thread_detach_and_resume(t);
     }
@@ -613,7 +613,7 @@ int spinner(int argc, const console_cmd_args *argv) {
         return -1;
     }
 
-    thread_t *t = thread_create("spinner", spinner_thread, NULL, argv[1].u, DEFAULT_STACK_SIZE);
+    thread_t *t = thread_create("spinner", spinner_thread, nullptr, argv[1].u, DEFAULT_STACK_SIZE);
     if (!t)
         return ERR_NO_MEMORY;
 

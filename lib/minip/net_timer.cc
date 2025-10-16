@@ -131,7 +131,7 @@ static int net_timer_work_thread(void *args) {
 }
 
 void net_timer_init(void) {
-    thread_detach_and_resume(thread_create("net timer", &net_timer_work_thread, NULL, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE));
+    thread_detach_and_resume(thread_create("net timer", &net_timer_work_thread, nullptr, DEFAULT_PRIORITY, DEFAULT_STACK_SIZE));
 }
 
 

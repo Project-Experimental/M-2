@@ -222,7 +222,7 @@ static tcp_socket_t *lookup_socket(ipv4_addr remote_ip, ipv4_addr local_ip, uint
     mutex_acquire(&tcp_socket_list_lock);
 
     /* XXX replace with something faster, like a hash table */
-    tcp_socket_t *s = NULL;
+    tcp_socket_t *s = nullptr;
     list_for_every_entry(&tcp_socket_list, s, tcp_socket_t, node) {
         if (s->state == STATE_CLOSED || s->state == STATE_LISTEN) {
             continue;
@@ -247,8 +247,8 @@ static tcp_socket_t *lookup_socket(ipv4_addr remote_ip, ipv4_addr local_ip, uint
         }
     }
 
-    /* fall through case returns null */
-    s = NULL;
+    /* fall through case returns nullptr */
+    s = nullptr;
 
 out:
     /* bump the ref before returning it */
@@ -418,7 +418,7 @@ void tcp_input(pktbuf_t *p, uint32_t src_ip, uint32_t dst_ip) {
             }
 
             /* see if we have a slot to accept */
-            if (s->accepted != NULL)
+            if (s->accepted != nullptr)
                 goto done;
 
             /* make a new accept socket */
@@ -452,7 +452,7 @@ void tcp_input(pktbuf_t *p, uint32_t src_ip, uint32_t dst_ip) {
             mss_option.mss = ntohs(s->mss); // XXX make sure we fit in their mss
 
             /* send a response */
-            tcp_socket_send(accept_socket, NULL, 0, PKT_ACK|PKT_SYN, &mss_option, sizeof(mss_option),
+            tcp_socket_send(accept_socket, nullptr, 0, static_cast<tcp_flags_t>(PKT_ACK|PKT_SYN), &mss_option, sizeof(mss_option),
                             accept_socket->tx_win_low);
 
             /* SYN consumed a sequence */
@@ -603,7 +603,7 @@ fin_wait_2:
             }
             break;
         case STATE_TIME_WAIT:
-            /* /dev/null of packets */
+            /* /dev/nullptr of packets */
             break;
     }
 
@@ -621,7 +621,7 @@ send_reset:
     LTRACEF("SEND RST\n");
     if (!(packet_flags & PKT_RST)) {
         tcp_send(src_ip, header->source_port, dst_ip, header->dest_port,
-                 NULL, 0, PKT_RST, NULL, 0, 0, header->ack_num, 0);
+                 nullptr, 0, PKT_RST, nullptr, 0, 0, header->ack_num, 0);
     }
 }
 
@@ -716,7 +716,7 @@ static void send_ack(tcp_socket_t *s) {
     if (s->state != STATE_ESTABLISHED && s->state != STATE_CLOSE_WAIT && s->state != STATE_FIN_WAIT_2)
         return;
 
-    tcp_socket_send(s, NULL, 0, PKT_ACK, NULL, 0, s->tx_win_low);
+    tcp_socket_send(s, nullptr, 0, PKT_ACK, nullptr, 0, s->tx_win_low);
 }
 
 static status_t tcp_send(ipv4_addr dest_ip, uint16_t dest_port, ipv4_addr src_ip, uint16_t src_port, const void *buf,
@@ -729,7 +729,7 @@ static status_t tcp_send(ipv4_addr dest_ip, uint16_t dest_port, ipv4_addr src_ip
     if (!p)
         return ERR_NO_MEMORY;
 
-    tcp_header_t *header = pktbuf_prepend(p, sizeof(tcp_header_t) + options_length);
+    tcp_header_t *header = reinterpret_cast<tcp_header_t*>(pktbuf_prepend(p, sizeof(tcp_header_t) + options_length));
     DEBUG_ASSERT(header);
 
     /* fill in the header */
@@ -833,7 +833,7 @@ static ssize_t tcp_write_pending_data(tcp_socket_t *s) {
     while (offset < pending) {
         uint32_t tosend = MIN(s->mss, pending - offset);
 
-        tcp_socket_send(s, s->tx_buffer + outstanding + offset, tosend, PKT_ACK|PKT_PSH, NULL, 0, s->tx_highest_seq);
+        tcp_socket_send(s, s->tx_buffer + outstanding + offset, tosend, static_cast<tcp_flags_t>(PKT_ACK|PKT_PSH), nullptr, 0, s->tx_highest_seq);
         s->tx_highest_seq += tosend;
         offset += tosend;
     }
@@ -861,13 +861,13 @@ static ssize_t tcp_retransmit(tcp_socket_t *s) {
     uint32_t tosend = MIN(s->mss, outstanding);
 
     LTRACEF("s %p, tosend %u seq %u\n", s, tosend, s->tx_win_low);
-    tcp_socket_send(s, s->tx_buffer, tosend, PKT_ACK|PKT_PSH, NULL, 0, s->tx_win_low);
+    tcp_socket_send(s, s->tx_buffer, tosend, static_cast<tcp_flags_t>(PKT_ACK|PKT_PSH), nullptr, 0, s->tx_win_low);
 
     return tosend;
 }
 
 static void handle_retransmit_timeout(void *_s) {
-    tcp_socket_t *s = _s;
+    tcp_socket_t *s = reinterpret_cast<tcp_socket_t*>(_s);
 
     LTRACEF("s %p\n", s);
 
@@ -886,7 +886,7 @@ done:
 }
 
 static void handle_delayed_ack_timeout(void *_s) {
-    tcp_socket_t *s = _s;
+    tcp_socket_t *s = reinterpret_cast<tcp_socket_t*>(_s);
 
     LTRACEF("s %p\n", s);
 
@@ -899,7 +899,7 @@ static void handle_delayed_ack_timeout(void *_s) {
 }
 
 static void handle_time_wait_timeout(void *_s) {
-    tcp_socket_t *s = _s;
+    tcp_socket_t *s = reinterpret_cast<tcp_socket_t*>(_s);
 
     LTRACEF("s %p\n", s);
 
@@ -948,9 +948,9 @@ static void tcp_remote_close(tcp_socket_t *s) {
 static tcp_socket_t *create_tcp_socket(bool alloc_buffers) {
     tcp_socket_t *s;
 
-    s = calloc(1, sizeof(tcp_socket_t));
+    s = reinterpret_cast<tcp_socket_t*>(calloc(1, sizeof(tcp_socket_t)));
     if (!s)
-        return NULL;
+        return nullptr;
 
     mutex_init(&s->lock);
     s->ref = 1; // start with the ref already bumped
@@ -968,11 +968,11 @@ static tcp_socket_t *create_tcp_socket(bool alloc_buffers) {
 
     if (alloc_buffers) {
         // XXX check for error
-        s->rx_buffer_raw = malloc(s->rx_win_size);
+        s->rx_buffer_raw = reinterpret_cast<uint8_t*>(malloc(s->rx_win_size));
         cbuf_initialize_etc(&s->rx_buffer, s->rx_win_size, s->rx_buffer_raw);
 
         s->tx_buffer_size = DEFAULT_TX_BUFFER_SIZE;
-        s->tx_buffer = malloc(s->tx_buffer_size);
+        s->tx_buffer = reinterpret_cast<uint8_t*>(malloc(s->tx_buffer_size));
     }
 
     sem_init(&s->accept_sem, 0);
@@ -1019,7 +1019,7 @@ status_t tcp_connect(tcp_socket_t **handle, uint32_t addr, uint16_t port) {
     mss_option.len = 0x4;
     mss_option.mss = ntohs(s->mss);
 
-    tcp_send(s->remote_ip, s->remote_port, s->local_ip, s->local_port, NULL, 0, PKT_SYN, &mss_option, 0x4, 0, s->tx_win_low, s->rx_win_size);
+    tcp_send(s->remote_ip, s->remote_port, s->local_ip, s->local_port, nullptr, 0, PKT_SYN, &mss_option, 0x4, 0, s->tx_win_low, s->rx_win_size);
 
     // TODO: handle retransmit
 
@@ -1084,7 +1084,7 @@ status_t tcp_accept_timeout(tcp_socket_t *listen_socket, tcp_socket_t **accept_s
     /* we got here, grab the accepted socket and return */
     DEBUG_ASSERT(s->accepted);
     *accept_socket = s->accepted;
-    s->accepted = NULL;
+    s->accepted = nullptr;
 
     mutex_release(&s->lock);
     dec_socket_ref(s);
@@ -1105,6 +1105,8 @@ ssize_t tcp_read(tcp_socket_t *socket, void *buf, size_t len) {
     inc_socket_ref(s);
 
     ssize_t ret = 0;
+    size_t remaining_bytes = 0;
+    uint32_t new_rx_win_size = 0;
 retry:
     /* block on available data */
     event_wait(&s->rx_event);
@@ -1127,13 +1129,13 @@ retry:
     }
 
     /* if we've used up the last byte in the read buffer, unsignal the read event */
-    size_t remaining_bytes = cbuf_space_used(&s->rx_buffer);
+    remaining_bytes = cbuf_space_used(&s->rx_buffer);
     if (s->state == STATE_ESTABLISHED && remaining_bytes == 0) {
         event_unsignal(&s->rx_event);
     }
 
     /* we've read something, make sure the other end knows that our window is opening */
-    uint32_t new_rx_win_size = s->rx_win_size - remaining_bytes;
+    new_rx_win_size = s->rx_win_size - remaining_bytes;
 
     /* if we've opened it enough, send an ack */
     if (new_rx_win_size >= s->mss && s->rx_win_high - s->rx_win_low < s->mss)
@@ -1236,14 +1238,14 @@ status_t tcp_close(tcp_socket_t *socket) {
         case STATE_SYN_RCVD:
         case STATE_ESTABLISHED:
             s->state = STATE_FIN_WAIT_1;
-            tcp_socket_send(s, NULL, 0, PKT_ACK|PKT_FIN, NULL, 0, s->tx_win_low);
+            tcp_socket_send(s, nullptr, 0, static_cast<tcp_flags_t>(PKT_ACK|PKT_FIN), nullptr, 0, s->tx_win_low);
             s->tx_win_low++;
 
             /* stick around and wait for them to FIN us */
             break;
         case STATE_CLOSE_WAIT:
             s->state = STATE_LAST_ACK;
-            tcp_socket_send(s, NULL, 0, PKT_ACK|PKT_FIN, NULL, 0, s->tx_win_low);
+            tcp_socket_send(s, nullptr, 0, static_cast<tcp_flags_t>(PKT_ACK|PKT_FIN), nullptr, 0, s->tx_win_low);
             s->tx_win_low++;
 
             // XXX set up fin retransmit timer here
@@ -1291,7 +1293,7 @@ usage:
     if (!strcmp(argv[1].str, "sockets")) {
 
         mutex_acquire(&tcp_socket_list_lock);
-        tcp_socket_t *s = NULL;
+        tcp_socket_t *s = nullptr;
         list_for_every_entry(&tcp_socket_list, s, tcp_socket_t, node) {
             dump_socket(s);
         }
@@ -1300,7 +1302,7 @@ usage:
         /* listen for a connection, accept it, then immediately close it */
         if (argc < 3) goto notenoughargs;
 
-        tcp_socket_t *handle = NULL;
+        tcp_socket_t *handle = nullptr;
 
         status_t err = tcp_open_listen(&handle, argv[2].u);
         printf("tcp_open_listen returns %d, handle %p\n", err, handle);
@@ -1317,7 +1319,7 @@ usage:
     } else if (!strcmp(argv[1].str, "listen")) {
         if (argc < 3) goto notenoughargs;
 
-        tcp_socket_t *handle = NULL;
+        tcp_socket_t *handle = nullptr;
 
         status_t err = tcp_open_listen(&handle, argv[2].u);
         printf("tcp_open_listen returns %d, handle %p\n", err, handle);

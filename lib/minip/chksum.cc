@@ -10,7 +10,7 @@
 
 /* XXX alternate implementation, merge */
 uint16_t ones_sum16(uint32_t sum, const void *_buf, int len) {
-    const uint16_t *buf = _buf;
+    const uint16_t *buf = const_cast<const uint16_t*>(buf);
 
     while (len >= 2) {
         sum += *buf++;

@@ -64,8 +64,8 @@ void arp_cache_update(uint32_t addr, const uint8_t mac[6]) {
         LTRACEF("Adding %u.%u.%u.%u -> %02x:%02x:%02x:%02x:%02x:%02x to cache\n",
                 ip.b[0], ip.b[1], ip.b[2], ip.b[3],
                 mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-        arp = malloc(sizeof(arp_entry_t));
-        if (arp == NULL) {
+        arp = reinterpret_cast<arp_entry_t*>(malloc(sizeof(arp_entry_t)));
+        if (arp == nullptr) {
             goto err;
         }
 
@@ -81,8 +81,8 @@ err:
 
 /* Looks up and returns a MAC address based on the provided ip addr */
 uint8_t *arp_cache_lookup(uint32_t addr) {
-    arp_entry_t *arp = NULL;
-    uint8_t *ret = NULL;
+    arp_entry_t *arp = nullptr;
+    uint8_t *ret = nullptr;
 
     /* If the entry is in the cache update the address and move
      * it to head */
@@ -121,12 +121,12 @@ int arp_send_request(uint32_t addr) {
     struct eth_hdr *eth;
     struct arp_pkt *arp;
 
-    if ((p = pktbuf_alloc()) == NULL) {
+    if ((p = pktbuf_alloc()) == nullptr) {
         return -1;
     }
 
-    eth = pktbuf_prepend(p, sizeof(struct eth_hdr));
-    arp = pktbuf_append(p, sizeof(struct arp_pkt));
+    eth = reinterpret_cast<struct eth_hdr*>(pktbuf_prepend(p, sizeof(struct eth_hdr)));
+    arp = reinterpret_cast<struct arp_pkt*>(pktbuf_append(p, sizeof(struct arp_pkt)));
     minip_build_mac_hdr(eth, bcast_mac, ETH_TYPE_ARP);
 
     arp->htype = htons(0x0001);
@@ -148,7 +148,7 @@ static void handle_arp_timeout_cb(void *arg) {
 }
 
 const uint8_t *arp_get_dest_mac(uint32_t host) {
-    const uint8_t *dst_mac = NULL;
+    const uint8_t *dst_mac = nullptr;
     bool arp_timeout = false;
     net_timer_t arp_timeout_timer;
 
@@ -157,7 +157,7 @@ const uint8_t *arp_get_dest_mac(uint32_t host) {
     }
 
     dst_mac = arp_cache_lookup(host);
-    if (dst_mac == NULL) {
+    if (dst_mac == nullptr) {
         arp_send_request(host);
         memset(&arp_timeout_timer, 0, sizeof(arp_timeout_timer));
         net_timer_set(&arp_timeout_timer, handle_arp_timeout_cb, &arp_timeout, 100);

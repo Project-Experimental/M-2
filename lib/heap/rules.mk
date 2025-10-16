@@ -5,8 +5,8 @@ GLOBAL_INCLUDES += $(LOCAL_DIR)/include
 MODULE := $(LOCAL_DIR)
 
 MODULE_SRCS += \
-	$(LOCAL_DIR)/heap_wrapper.c \
-	$(LOCAL_DIR)/page_alloc.c
+	$(LOCAL_DIR)/heap_wrapper.cc \
+	$(LOCAL_DIR)/page_alloc.cc
 
 # pick a heap implementation
 ifndef LK_HEAP_IMPLEMENTATION
