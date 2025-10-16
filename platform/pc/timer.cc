@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2025 Nakada Tokumei
  * Copyright (c) 2025 Travis Geiselbrecht
  *
  * Use of this source code is governed by a MIT-style

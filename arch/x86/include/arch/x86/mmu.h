@@ -114,9 +114,6 @@ typedef uint32_t map_addr_t;
 typedef uint32_t arch_flags_t;
 #endif
 
-// void x86_mmu_early_init(void);
-// void x86_mmu_init(void);
-// void x86_mmu_early_init_percpu(void);
 
 __END_CDECLS
 

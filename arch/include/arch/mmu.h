@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2025 Nakada Tokumei
  * Copyright (c) 2014-2016 Travis Geiselbrecht
  *
  * Use of this source code is governed by a MIT-style
@@ -34,28 +35,11 @@ __BEGIN_CDECLS
 #define ARCH_MMU_FLAG_INVALID           (1U<<6) /* indicates that flags are not specified */
 
 /* arch level query of some features at the mapping/query level */
-// bool arch_mmu_supports_nx_mappings(void);
-// bool arch_mmu_supports_ns_mappings(void);
-// bool arch_mmu_supports_user_aspaces(void);
 
 /* forward declare the per-address space arch-specific context object */
 typedef struct arch_aspace arch_aspace_t;
 
 #define ARCH_ASPACE_FLAG_KERNEL         (1U<<0)
-
-// /* initialize per address space */
-// status_t arch_mmu_init_aspace(arch_aspace_t *aspace, vaddr_t base, size_t size, uint flags) __NONNULL((1));
-// status_t arch_mmu_destroy_aspace(arch_aspace_t *aspace) __NONNULL((1));
-
-// /* routines to map/unmap/query mappings per address space */
-// int arch_mmu_map(arch_aspace_t *aspace, vaddr_t vaddr, paddr_t paddr, uint count, uint flags) __NONNULL((1));
-// int arch_mmu_unmap(arch_aspace_t *aspace, vaddr_t vaddr, uint count) __NONNULL((1));
-// status_t arch_mmu_query(arch_aspace_t *aspace, vaddr_t vaddr, paddr_t *paddr, uint *flags) __NONNULL((1));
-
-// vaddr_t arch_mmu_pick_spot(arch_aspace_t *aspace,
-//                            vaddr_t base, uint prev_region_arch_mmu_flags,
-//                            vaddr_t end,  uint next_region_arch_mmu_flags,
-//                            vaddr_t align, size_t size, uint arch_mmu_flags) __NONNULL((1));
 
 /*
  * load a new user address space context.
