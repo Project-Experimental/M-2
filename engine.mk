@@ -6,7 +6,7 @@ include make/macros.mk
 BUILDROOT ?= .
 
 # !!!!!!!!!!!!!!!! For Clang !!!!!!!!!!!!!!!!!!
-TARGET=--target=x86_64-none-elf
+TARGET=--target=x86_64-none-m2
 
 ifeq ($(LLVM),1)
   CC      := clang
@@ -22,18 +22,18 @@ ifeq ($(LLVM),1)
   SIZE    := llvm-size
   CPPFILT := llvm-cxxfilt
 else ifneq (, $(findstring /, $(LLVM)))
-  CC      := $(LLVM)clang $(TARGET)
-  CXX     := $(LLVM)clang++ $(TARGET)
-  AS      := $(LLVM)clang $(TARGET) -x assembler-with-cpp
-  LD      := $(LLVM)ld.lld
-  AR      := $(LLVM)llvm-ar
-  NM      := $(LLVM)llvm-nm
-  OBJCOPY := $(LLVM)llvm-objcopy
-  OBJDUMP := $(LLVM)llvm-objdump
-  STRIP   := $(LLVM)llvm-strip
-  RANLIB  := $(LLVM)llvm-ranlib
-  SIZE    := $(LLVM)llvm-size
-  CPPFILT := $(LLVM)llvm-cxxfilt
+  CC      := $(LLVM)/clang -mlong-double-64 -nostdinc++ -nostdlib++ -std=c++26 -I${HOME}/sysroot_m2/usr/include/c++/v1 -I${HOME}/sysroot_m2/usr/include -v $(TARGET)
+  CXX     := $(LLVM)/clang++ -mlong-double-64 -nostdinc++ -nostdlib++ -std=c++26 -I${HOME}/sysroot_m2/usr/include/c++/v1 -I${HOME}/sysroot_m2/usr/include -v $(TARGET)
+  AS      := $(LLVM)/clang $(TARGET) -x assembler-with-cpp
+  LD      := $(LLVM)/ld.lld
+  AR      := $(LLVM)/llvm-ar
+  NM      := $(LLVM)/llvm-nm
+  OBJCOPY := $(LLVM)/llvm-objcopy
+  OBJDUMP := $(LLVM)/llvm-objdump
+  STRIP   := $(LLVM)/llvm-strip
+  RANLIB  := $(LLVM)/llvm-ranlib
+  SIZE    := $(LLVM)/llvm-size
+  CPPFILT := $(LLVM)/llvm-cxxfilt
 endif
 # !!!!!!!!!!!!!!!! For Clang !!!!!!!!!!!!!!!!!!
 
@@ -102,7 +102,7 @@ GLOBAL_COMPILEFLAGS += -fno-common
 # rely on all hosted environment functionality being present.
 GLOBAL_COMPILEFLAGS += -ffreestanding
 GLOBAL_CFLAGS := --std=gnu11 -Werror-implicit-function-declaration -Wstrict-prototypes -Wwrite-strings
-GLOBAL_CPPFLAGS := --std=c++26 -fno-exceptions -fno-rtti -fno-threadsafe-statics
+GLOBAL_CPPFLAGS := --std=c++26 -stdlib=libc++ -fno-exceptions -fno-rtti -fno-threadsafe-statics
 GLOBAL_ASMFLAGS := -DASSEMBLY
 GLOBAL_LDFLAGS :=
 

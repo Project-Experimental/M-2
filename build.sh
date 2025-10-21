@@ -4,4 +4,4 @@ echo ""
 echo " Wrriten by Nakada Tokumei    "
 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 
-make LLVM=/usr/lib/llvm-20/bin/ pc-x86-64-test
+make LLVM=${HOME}/sysroot_m2/usr/bin pc-x86-64-test
