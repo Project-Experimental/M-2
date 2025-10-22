@@ -32,6 +32,7 @@ SECTIONS
         __code_start = .;
         KEEP(*(.text.boot))
         *(.text* .sram.text)
+        *(.syscall.m2*)
         *(.gnu.linkonce.t.*)
         __code_end = .;
     } =0x9090
