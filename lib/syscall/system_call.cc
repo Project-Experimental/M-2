@@ -1,7 +1,7 @@
 #include <system_call.h>
 
 class SysCallInit 
-    : public lk::SuperInit<LK_INIT_LEVEL_ARCH, LK_INIT_FLAG_PRIMARY_CPU>
+    : public m2::SuperInit<LK_INIT_LEVEL_ARCH, LK_INIT_FLAG_PRIMARY_CPU>
 {
 public:
     void Init(uint level)
@@ -11,4 +11,4 @@ public:
 };
 
 
-M2_INIT_HOOK_EX(x86_systemcall, SysCallInit);
+M2_INIT_HOOK(x86_systemcall, SysCallInit);
