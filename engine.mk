@@ -22,8 +22,8 @@ ifeq ($(LLVM),1)
   SIZE    := llvm-size
   CPPFILT := llvm-cxxfilt
 else ifneq (, $(findstring /, $(LLVM)))
-  CC      := $(LLVM)/clang -mlong-double-64 -nostdinc++ -nostdlib++ -std=c++26 -I${HOME}/sysroot_m2/usr/include/c++/v1 -I${HOME}/sysroot_m2/usr/include -v $(TARGET)
-  CXX     := $(LLVM)/clang++ -mlong-double-64 -nostdinc++ -nostdlib++ -std=c++26 -I${HOME}/sysroot_m2/usr/include/c++/v1 -I${HOME}/sysroot_m2/usr/include -v $(TARGET)
+  CC      := $(LLVM)/clang -nostdinc++ -std=c++26 $(TARGET)
+  CXX     := $(LLVM)/clang++ -nostdinc++ -std=c++26 $(TARGET)
   AS      := $(LLVM)/clang $(TARGET) -x assembler-with-cpp
   LD      := $(LLVM)/ld.lld
   AR      := $(LLVM)/llvm-ar

@@ -3,7 +3,8 @@ LOCAL_DIR := $(GET_LOCAL_DIR)
 MODULE := $(LOCAL_DIR)
 
 MODULE_OPTIONS := extra_warnings
-MODULE_DEPS := lib/fixed_point
+MODULE_DEPS := lib/fixed_point \
+			   lib/syscall
 
 # x86 code always runs with the mmu enabled
 WITH_KERNEL_VM := 1
