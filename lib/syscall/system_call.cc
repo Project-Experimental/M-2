@@ -8,6 +8,9 @@
 
 syscall_routine_t sys_table[NR_SYSCALLS] __attribute__((section(".syscall.m2")));
 
+extern syscall_init_arr_t __syscall_handler_init_start;
+extern syscall_init_arr_t __syscall_handler_init_end;
+
 class SysCallInit 
     : public m2::SuperInit<LK_INIT_LEVEL_ARCH, LK_INIT_FLAG_PRIMARY_CPU>
 {
@@ -34,14 +37,26 @@ class SysCallInit
         write_msr(X86_MSR_IA32_LSTAR, reinterpret_cast<uint64_t>(sys_routine));
     }
 
+    void SyscallTableInit(void)
+    {
+        auto count = __syscall_handler_init_end - __syscall_handler_init_start;
+
+        KERNEL_PRINTF("Syscall Init Count : %d\n", count);
+        
+        auto i = 0;
+        for (; i < count; i++)
+            __syscall_handler_init_start[i]();
+    }
+
 public:
     void Init(uint level)
     {
-        KERNEL_PRINTF("M2::-> System Call Init Enterd\n");
+        KERNEL_PRINTF("System Call Init Enterd\n");
 
         EnableSyscall();
         SetUserKernelCode(KERNEL_CODE, USER_CODE);
         SetSyscallHandler(syscall_entry);
+        SyscallTableInit();
     }
 };
 
